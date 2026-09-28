@@ -18,7 +18,7 @@ const CommitmentBlock = ({ icon: Icon, title, desc, link, delay, visible }) => {
       style={{ transitionDelay: `${delay}ms` }}
     >
       {/* Dégradé de fond subtil activé instantanément au survol */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#023B6A]/30 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none" />
       
       <div className="relative z-10 flex flex-col h-full">
         <div className="text-2xl text-amber-400 mb-6">

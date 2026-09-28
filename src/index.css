@@ -1,9 +1,25 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   body {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
+}
+
+/* Ant Design Dropdown hover styling */
+.ant-dropdown-menu .ant-dropdown-menu-item:hover,
+.ant-dropdown-menu .ant-dropdown-menu-submenu-title:hover {
+  background-color: #d1d5db !important; /* gray-300 */
+  color: #023B6A !important; /* ensure text remains blue for contrast */
+}
+
+/* Ensure selected item also has appropriate background */
+.ant-dropdown-menu .ant-dropdown-menu-item-selected,
+.ant-dropdown-menu .ant-dropdown-menu-submenu-title-selected {
+  background-color: #e8f0fe !important; /* light blue tint */
+  color: #023B6A !important;
 }
 
 /* Glassmorphism panels */

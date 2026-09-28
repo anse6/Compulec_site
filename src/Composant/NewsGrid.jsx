@@ -37,7 +37,7 @@ const ArticleCard = ({ item, delay, visible }) => {
         </div>
 
         {/* Titre */}
-        <h3 className="text-lg font-bold text-blue-900 leading-snug mb-3 group-hover:text-blue-700 transition-colors">
+        <h3 className="text-lg font-bold text-[#023B6A] leading-snug mb-3 group-hover:text-[#023B6A] transition-colors">
           {item.title}
         </h3>
 
