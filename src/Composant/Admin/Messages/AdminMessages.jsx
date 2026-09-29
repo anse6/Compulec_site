@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import { Table, ConfigProvider, Input, Button, Segmented, Tag, Popconfirm, message } from 'antd';
 import { EyeOutlined, MailOutlined, CheckCircleOutlined, SyncOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,13 @@ import {
 
 // --- Main Component ---
 export default function AdminMessages() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [activeType, setActiveType] = useState('Contact'); // 'Contact' or 'Consultation'
   const [activeStatus, setActiveStatus] = useState('Tous'); // 'Tous' or 'Non lus'
   
@@ -108,7 +116,7 @@ export default function AdminMessages() {
         return (
           <div className="flex items-center gap-3">
             <AvatarWithPopover name={name || 'Anonyme'} email={record.email} />
-            <span className="font-semibold text-slate-900 dark:text-white text-[13px]">{name || 'Anonyme'}</span>
+            <span className="font-semibold  text-[13px]" style={{ color: textMain }}>{name || 'Anonyme'}</span>
           </div>
         );
       },
@@ -117,14 +125,14 @@ export default function AdminMessages() {
       title: 'SUJET',
       dataIndex: activeType === 'Contact' ? 'objet' : 'serviceOfInterest',
       key: 'subject',
-      render: text => <span className="text-[13px] text-slate-700 dark:text-slate-200">{text}</span>,
+      render: text => <span className="text-[13px] " style={{ color: textMain }}>{text}</span>,
     },
     {
       title: 'EMAIL',
       dataIndex: 'email',
       key: 'email',
       render: email => (
-        <a href={`mailto:${email}`} className="text-[13px] text-[#023B6A] hover:underline flex items-center gap-1">
+        <a href={`mailto:${email}`} className="text-[13px]  hover:underline flex items-center gap-1">
           <MailOutlined className="text-[11px]" /> {email}
         </a>
       ),
@@ -133,7 +141,7 @@ export default function AdminMessages() {
       title: 'TÉLÉPHONE',
       dataIndex: activeType === 'Contact' ? 'telephone' : 'phone',
       key: 'phone',
-      render: text => <span className="text-[13px] text-slate-700 dark:text-slate-200">{text || '-'}</span>,
+      render: text => <span className="text-[13px] " style={{ color: textMain }}>{text || '-'}</span>,
     },
     {
       title: 'DATE',
@@ -141,7 +149,7 @@ export default function AdminMessages() {
       key: 'createdAt',
       render: text => {
         if (!text) return '-';
-        return <span className="text-[13px] text-slate-500 dark:text-slate-400">{new Date(text).toLocaleString()}</span>;
+        return <span className="text-[13px] " style={{ color: textSub }}>{new Date(text).toLocaleString()}</span>;
       },
     },
     {
@@ -174,7 +182,14 @@ export default function AdminMessages() {
             icon={<EyeOutlined />}
             size="small"
             onClick={() => navigate(`/admin/messages/preview/${record.id}`, { state: { record, type: activeType } })}
-            style={{ borderRadius: 6, fontWeight: 600, fontSize: 12 }}
+            style={{
+              borderRadius: 6,
+              fontWeight: 600,
+              fontSize: 12,
+              color: textMain,
+              backgroundColor: bgCard,
+              borderColor: border,
+            }}
           >
             Voir
           </Button>
@@ -202,8 +217,8 @@ export default function AdminMessages() {
 
         {/* HEADER */}
         <div>
-          <h1 className="text-[26px] font-bold text-[#023B6A] m-0 mb-1">Messages & Consultations</h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 m-0">
+          <h1 className="text-[26px] font-bold m-0 mb-1" style={{ color: textMain }}>Messages &amp; Consultations</h1>
+          <p className="text-[13px]  m-0" style={{ color: textSub }}>
             Gérez les messages de contact et les requêtes de consultation reçus via le site web COMPULEC.
           </p>
         </div>
@@ -252,7 +267,7 @@ export default function AdminMessages() {
         </div>
 
         {/* TABLE */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div className=" rounded-xl overflow-hidden shadow-sm" style={{ backgroundColor: bgCard, border: `1px solid ${border}` }}>
           <Table
             columns={columns}
             dataSource={filteredData}

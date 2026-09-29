@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import { Input, Button, Tag, Popconfirm, Spin, message as antMessage } from "antd";
 import { SyncOutlined, CheckCircleOutlined, UserSwitchOutlined, LoadingOutlined } from "@ant-design/icons";
 import StatCard from "../Dashboard/StatCard";
@@ -82,6 +83,13 @@ function formatTime(dateStr) {
 
 // --- MAIN COMPONENT ---
 export default function AdminAIChat() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [activeTab, setActiveTab] = useState("Transferred"); // Transferred (waiting), Active, Closed
   const [selectedToken, setSelectedToken] = useState(null);
   const [replyText, setReplyText] = useState("");
@@ -148,8 +156,8 @@ export default function AdminAIChat() {
     <div className="pb-10 font-['Poppins',sans-serif] w-full">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">AI Chat</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 m-0">
+        <h1 className="text-2xl font-bold  mb-1" style={{ color: textMain }}>AI Chat</h1>
+        <p className="text-sm  m-0" style={{ color: textSub }}>
           Supervisez les conversations du bot et reprenez la main quand nécessaire.
         </p>
       </div>
@@ -161,11 +169,11 @@ export default function AdminAIChat() {
           value={activeSessions.length < 10 ? `0${activeSessions.length}` : activeSessions.length}
           subtitle="En cours avec un conseiller"
           icon={<IconMessage />}
-          iconBg="#E0E7FF"
-          iconColor="#6366F1"
-          cardBg="#EEF2FF"
-          cardBorder="#E0E7FF"
-          textColor="#4F46E5"
+          iconBg={isDark ? "#312E81" : "#E0E7FF"}
+          iconColor={isDark ? "#A5B4FC" : "#6366F1"}
+          cardBg={isDark ? "#1E1B4B" : "#EEF2FF"}
+          cardBorder={isDark ? "#3730A3" : "#E0E7FF"}
+          textColor={isDark ? "#A5B4FC" : "#4F46E5"}
         />
 
         <StatCard
@@ -173,11 +181,11 @@ export default function AdminAIChat() {
           value={pendingSessions.length < 10 ? `0${pendingSessions.length}` : pendingSessions.length}
           subtitle="Transféré par le bot"
           icon={<IconUserCheck />}
-          iconBg="#A7F3D0"
-          iconColor="#10B981"
-          cardBg="#D1FAE5"
-          cardBorder="#A7F3D0"
-          textColor="#059669"
+          iconBg={isDark ? "#064E3B" : "#A7F3D0"}
+          iconColor={isDark ? "#6EE7B7" : "#10B981"}
+          cardBg={isDark ? "#022C22" : "#D1FAE5"}
+          cardBorder={isDark ? "#065F46" : "#A7F3D0"}
+          textColor={isDark ? "#34D399" : "#059669"}
         />
 
         <StatCard
@@ -185,11 +193,11 @@ export default function AdminAIChat() {
           value={activeSessions.length + pendingSessions.length + closedSessions.length}
           subtitle="Toutes les sessions"
           icon={<IconCheckCircle />}
-          iconBg="#FEF08A"
-          iconColor="#EAB308"
-          cardBg="#FEF9C3"
-          cardBorder="#FEF08A"
-          textColor="#CA8A04"
+          iconBg={isDark ? "#713F12" : "#FEF08A"}
+          iconColor={isDark ? "#FDE047" : "#EAB308"}
+          cardBg={isDark ? "#422006" : "#FEF9C3"}
+          cardBorder={isDark ? "#92400E" : "#FEF08A"}
+          textColor={isDark ? "#FCD34D" : "#CA8A04"}
         />
       </div>
 
@@ -198,10 +206,10 @@ export default function AdminAIChat() {
         {/* Left Sidebar */}
         <div className="w-[350px] flex flex-col gap-4">
           {/* Search & Tabs */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4">
+          <div className=" rounded-xl p-4" style={{ backgroundColor: bgCard, border: `1px solid ${border}` }}>
             <Search placeholder="Rechercher..." className="mb-4" />
 
-            <div className="flex justify-between bg-slate-50 dark:bg-slate-800/50 p-1 rounded-lg">
+            <div className="flex justify-between  p-1 rounded-lg" style={{ backgroundColor: isDark ? "#0F172A" : "#F8FAFC" }}>
               {["Transferred", "Active", "Closed"].map((tab) => {
                 const isActive = activeTab === tab;
                 const count = tab === "Transferred" ? pendingSessions.length 
@@ -215,11 +223,11 @@ export default function AdminAIChat() {
                   <div
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-2 py-1.5 text-[11px] rounded-md cursor-pointer flex-1 text-center transition-all ${
-                      isActive
-                        ? "font-semibold text-slate-900 dark:text-white bg-white dark:bg-slate-900 shadow-sm"
-                        : "font-medium text-slate-500 dark:text-slate-400 bg-transparent"
-                    }`}
+                    className={`px-2 py-1.5 text-[11px] rounded-md cursor-pointer flex-1 text-center transition-all ${isActive ? "font-semibold shadow-sm" : "font-medium"}`}
+                    style={{
+                      color: isActive ? textMain : textSub,
+                      backgroundColor: isActive ? bgCard : "transparent"
+                    }}
                   >
                     {label} ({count})
                   </div>
@@ -229,7 +237,7 @@ export default function AdminAIChat() {
           </div>
 
           {/* List of Chats */}
-          <div className={`flex-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl overflow-y-auto ${noScrollbar}`}>
+          <div className={`flex-1 rounded-xl overflow-y-auto ${noScrollbar}`} style={{ backgroundColor: bgCard, border: `1px solid ${border}` }}>
             {loadingPending || loadingActive || loadingClosed ? (
               <div className="flex justify-center items-center h-full"><Spin /></div>
             ) : displaySessions.length === 0 ? (
@@ -239,20 +247,21 @@ export default function AdminAIChat() {
                 <div
                   key={chat.sessionToken}
                   onClick={() => setSelectedToken(chat.sessionToken)}
-                  className={`p-4 cursor-pointer transition-colors border-l-4 ${
-                    selectedToken === chat.sessionToken 
-                      ? "bg-slate-50 dark:bg-slate-800/50 border-[#023B6A]" 
-                      : "bg-white dark:bg-slate-900 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-800/50/50"
-                  } ${idx !== displaySessions.length - 1 ? "border-b border-b-slate-100" : ""}`}
+                  className={`p-4 cursor-pointer transition-colors border-l-4 ${idx !== displaySessions.length - 1 ? "border-b" : ""}`}
+                  style={{
+                    backgroundColor: selectedToken === chat.sessionToken ? (isDark ? "#0F172A" : "#F8FAFC") : bgCard,
+                    borderColor: selectedToken === chat.sessionToken ? primary : "transparent",
+                    borderBottomColor: idx !== displaySessions.length - 1 ? border : "transparent"
+                  }}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-slate-900 dark:text-white text-sm truncate max-w-[150px]">
+                    <span className="font-bold  text-sm truncate max-w-[150px]" style={{ color: textMain }}>
                       {chat.visitorName || "Anonyme"}
                     </span>
                     <AIChatStatusBadge status={chat.status} />
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[12px] text-slate-500 dark:text-slate-400">
+                    <span className="text-[12px] " style={{ color: textSub }}>
                       {chat.questionCount || 0} question(s)
                     </span>
                     <span className="text-[11px] text-slate-400">
@@ -266,10 +275,10 @@ export default function AdminAIChat() {
         </div>
 
         {/* Right Chat View */}
-        <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl flex flex-col">
+        <div className="flex-1  rounded-xl flex flex-col" style={{ backgroundColor: bgCard, border: `1px solid ${border}` }}>
           {/* Chat Header */}
-          <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white m-0">
+          <div className="px-6 py-5 border-b  flex justify-between items-center" style={{ borderColor: border }}>
+            <h2 className="text-lg font-bold  m-0" style={{ color: textMain }}>
               {selectedChat ? `Session avec ${selectedChat.visitorName}` : "Sélectionnez une conversation"}
             </h2>
             {selectedChat && selectedChat.status !== 'CLOSED' && (
@@ -293,23 +302,24 @@ export default function AdminAIChat() {
 
           {/* Chat Transcript Area */}
           {selectedChat && (
-            <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-3 shrink-0 shadow-sm z-10 relative">
+            <div className="px-6 py-3 flex items-center gap-3 shrink-0 shadow-sm z-10 relative border-b" style={{ backgroundColor: isDark ? "#422006" : "#FFFBEB", borderColor: isDark ? "#713F12" : "#FDE68A" }}>
               <div className="w-10 h-10 rounded-full bg-amber-400 text-white flex items-center justify-center font-bold shadow-sm">
                 {selectedChat.visitorName?.charAt(0).toUpperCase() || <IconUser />}
               </div>
               <div className="flex-1">
-                <div className="font-bold text-sm text-amber-900 leading-tight">
+                <div className="font-bold text-sm leading-tight" style={{ color: isDark ? "#FDE047" : "#78350F" }}>
                   Vous répondez à {selectedChat.visitorName || "Anonyme"}
                 </div>
-                <div className="text-[11px] text-amber-700 mt-0.5">
+                <div className="text-[11px] mt-0.5" style={{ color: isDark ? "#FBBF24" : "#B45309" }}>
                   {selectedChat.visitorEmail || "Aucun email fourni"}
                 </div>
               </div>
-              <Tag color="gold" className="m-0 border-amber-300 font-medium">Session active</Tag>
+              <Tag color="gold" className="m-0 font-medium" style={{ borderColor: isDark ? "#B45309" : "#FCD34D" }}>Session active</Tag>
             </div>
           )}
 
-          <div className={`flex-1 p-6 overflow-y-auto flex flex-col gap-6 bg-slate-50 dark:bg-slate-800/50 ${noScrollbar}`}>
+          <div className={`flex-1 p-6 overflow-y-auto flex flex-col gap-6 ${noScrollbar}`}
+            style={{ backgroundColor: isDark ? "#0F172A" : "#F8FAFC" }}>
             {loadingDetail ? (
               <div className="flex justify-center items-center h-full"><Spin /></div>
             ) : selectedChat?.messages?.length > 0 ? (
@@ -324,19 +334,23 @@ export default function AdminAIChat() {
                 return (
                   <div key={msg.id} className={`flex gap-4 items-start ${alignLeft ? "flex-row" : "flex-row-reverse"}`}>
                     {/* Avatar */}
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold
-                      ${ isBot ? "bg-[#023B6A] text-white"
-                        : isAdmin ? "bg-emerald-600 text-white"
-                        : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"}`}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+                      style={{
+                        backgroundColor: isBot ? primary : isAdmin ? "#059669" : bgCard,
+                        color: isBot || isAdmin ? "#ffffff" : textSub,
+                        border: (!isBot && !isAdmin) ? `1px solid ${border}` : "none"
+                      }}>
                       {isBot ? <IconBot /> : isAdmin ? 'A' : <IconUser />}
                     </div>
 
                     {/* Message Bubble */}
-                    <div className={`max-w-[75%] p-4 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)]
-                      ${ isBot ? "bg-[#023B6A] text-slate-50 rounded-tl-none"
-                        : isAdmin ? "bg-emerald-600 text-white rounded-tl-none"
-                        : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-tr-none"}`}>
-                      <div className={`text-[11px] font-medium mb-1.5 ${ alignLeft ? (isBot ? "text-blue-300" : "text-emerald-200") : "text-slate-400"}`}>
+                    <div className={`max-w-[75%] p-4 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] ${alignLeft ? "rounded-tl-none" : "rounded-tr-none"}`}
+                      style={{
+                        backgroundColor: isBot ? primary : isAdmin ? "#059669" : bgCard,
+                        color: isBot || isAdmin ? "#ffffff" : textMain,
+                        border: (!isBot && !isAdmin) ? `1px solid ${border}` : "none"
+                      }}>
+                      <div className="text-[11px] font-medium mb-1.5" style={{ color: alignLeft ? (isBot ? "#bae6fd" : "#a7f3d0") : textSub }}>
                         {senderLabel} · {formatTime(msg.createdAt)}
                       </div>
                       <div className="text-sm leading-relaxed" style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
@@ -354,7 +368,7 @@ export default function AdminAIChat() {
 
           {/* Chat Input */}
           {selectedChat && selectedChat.status !== 'CLOSED' ? (
-            <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-4">
+            <div className="p-5 border-t flex gap-4" style={{ backgroundColor: bgCard, borderColor: border, borderTopWidth: 1, borderTopStyle: "solid" }}>
               <Input
                 placeholder={`Répondre à ${selectedChat.visitorName || 'Anonyme'}...`}
                 size="large"
@@ -362,7 +376,8 @@ export default function AdminAIChat() {
                 onChange={(e) => setReplyText(e.target.value)}
                 onPressEnter={handleSendReply}
                 disabled={isReplying}
-                className="rounded-lg bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800"
+                className="rounded-lg"
+                style={{ borderColor: border, backgroundColor: isDark ? "#0F172A" : "#F8FAFC", color: textMain }}
               />
               <Button
                 size="large"
@@ -375,11 +390,11 @@ export default function AdminAIChat() {
               </Button>
             </div>
           ) : selectedChat?.status === 'CLOSED' ? (
-            <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-center text-slate-500 dark:text-slate-400 text-sm">
+            <div className="p-5 border-t text-center text-sm" style={{ borderColor: border, backgroundColor: isDark ? "#0F172A" : "#F1F5F9", color: textSub }}>
               Cette session est clôturée. Vous ne pouvez plus répondre.
             </div>
           ) : (
-            <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-center text-slate-400 text-sm italic">
+            <div className="p-5 border-t text-center text-sm italic" style={{ borderColor: border, backgroundColor: isDark ? "#0F172A" : "#F8FAFC", color: textSub }}>
               Sélectionnez une conversation à gauche pour commencer à discuter.
             </div>
           )}

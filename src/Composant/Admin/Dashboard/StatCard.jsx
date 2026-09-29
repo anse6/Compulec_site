@@ -1,15 +1,6 @@
 import React from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 
-/**
- * StatCard — Carte de statistique unique
- * Aucune dépendance externe : l'icône est fournie via la prop `icon`
- * (un élément React, ex: <IconProjects />), comme dans Dashboard.jsx.
- *
- * Props :
- *  - title, value, subtitle, footer (string)
- *  - icon (élément React déjà instancié, ex: <IconProjects />)
- *  - iconBg, iconColor, cardBg, cardBorder, textColor (couleurs)
- */
 export default function StatCard({
   title,
   value,
@@ -23,12 +14,18 @@ export default function StatCard({
   footer,
   onClick,
 }) {
+  const isDark = useAdminTheme();
+  const innerBg = isDark ? "#1E293B" : "#FFFFFF";
+  const innerBorder = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
+  const titleColor = isDark ? "#94A3B8" : "#8392A5";
+  const valueColor = isDark ? "#F8FAFC" : "#023B6A";
+
   return (
     <div
       onClick={onClick}
       style={{
         background: cardBg,
-        border: `1.5px dashed ${cardBorder}`, // ── bordure en pointillés comme dans la maquette
+        border: `1.5px dashed ${cardBorder}`,
         borderRadius: 16,
         padding: "12px",
         display: "flex",
@@ -49,16 +46,16 @@ export default function StatCard({
         e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.04)";
       }}
     >
-      {/* Inner white box */}
+      {/* Inner box */}
       <div
         style={{
-          backgroundColor: "#FFFFFF",
+          backgroundColor: innerBg,
           borderRadius: 12,
           padding: "16px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          border: "1px solid rgba(0,0,0,0.04)",
+          border: `1px solid ${innerBorder}`,
           boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
         }}
       >
@@ -67,7 +64,7 @@ export default function StatCard({
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: "#8392A5", // Grayish color for title
+              color: titleColor,
               margin: "0 0 8px 0",
             }}
           >
@@ -77,7 +74,7 @@ export default function StatCard({
             style={{
               fontSize: 28,
               fontWeight: 800,
-              color: "#023B6A", // Dark blue for value
+              color: valueColor,
               margin: 0,
               lineHeight: 1,
             }}
@@ -85,7 +82,6 @@ export default function StatCard({
             {value}
           </h3>
         </div>
-        {/* Icône avec fond coloré rond pour contraster avec la boîte blanche */}
         <div
           style={{
             width: 40,
@@ -104,7 +100,7 @@ export default function StatCard({
         </div>
       </div>
 
-      {/* Footer section (subtitle + arrow) */}
+      {/* Footer */}
       <div
         style={{
           display: "flex",
@@ -114,33 +110,12 @@ export default function StatCard({
           flex: 1,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 12,
-              color: textColor,
-              opacity: 0.8,
-              margin: 0,
-              fontWeight: 500,
-            }}
-          >
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <p style={{ fontSize: 12, color: textColor, opacity: 0.85, margin: 0, fontWeight: 500 }}>
             {subtitle}
           </p>
           {footer && (
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: textColor,
-                margin: "4px 0 0",
-              }}
-            >
+            <p style={{ fontSize: 12, fontWeight: 700, color: textColor, margin: "4px 0 0" }}>
               {footer}
             </p>
           )}
@@ -150,11 +125,7 @@ export default function StatCard({
           height="18"
           viewBox="0 0 24 24"
           fill="none"
-          style={{
-            flexShrink: 0,
-            marginTop: footer ? "auto" : 0,
-            marginBottom: footer ? 4 : 0,
-          }}
+          style={{ flexShrink: 0, marginTop: footer ? "auto" : 0, marginBottom: footer ? 4 : 0 }}
         >
           <path
             d="M5 12H19M19 12L13 6M19 12L13 18"

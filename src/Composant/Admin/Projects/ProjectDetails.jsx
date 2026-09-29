@@ -1,4 +1,5 @@
 import React from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeftOutlined, ExportOutlined, EditOutlined, DeleteOutlined, ReloadOutlined,
@@ -18,6 +19,13 @@ function getImageUrl(img) {
 }
 
 export default function ProjectDetails() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const navigate  = useNavigate();
   const { id }    = useParams();
 
@@ -71,20 +79,20 @@ export default function ProjectDetails() {
         type="link"
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate("/admin/projects")}
-        style={{ padding: 0, color: "#023B6A", fontWeight: 600, marginBottom: 24 }}
+        style={{ padding: 0, color: primary, fontWeight: 600, marginBottom: 24 }}
       >
         Back to Projects
       </Button>
 
       {/* Cover Image */}
       {coverImg && (
-        <div style={{ width: "100%", height: 320, borderRadius: 16, overflow: "hidden", marginBottom: 24, border: "1px solid var(--ant-color-border-secondary)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+        <div style={{ width: "100%", height: 320, borderRadius: 16, overflow: "hidden", marginBottom: 24, border: `1px solid ${border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
           <img src={coverImg} alt="Cover" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </div>
       )}
 
       {/* Header Info Box */}
-      <div style={{ backgroundColor: "var(--ant-color-bg-container)", border: "1px solid var(--ant-color-border-secondary)", borderRadius: 16, padding: 32, marginBottom: 32, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+      <div style={{ backgroundColor: bgCard, border: `1px solid ${border}`, borderRadius: 16, padding: 32, marginBottom: 32, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
           <VisibilityToggle projetId={project.id} publie={project.publie} />
           <div style={{ display: "flex", gap: 12 }}>
@@ -111,10 +119,10 @@ export default function ProjectDetails() {
           </div>
         </div>
 
-        <h1 style={{ fontWeight: 800, fontSize: 28, color: "#023B6A", marginBottom: 8, lineHeight: 1.3 }}>
+        <h1 style={{ fontWeight: 800, fontSize: 28, color: primary, marginBottom: 8, lineHeight: 1.3 }}>
           {project.titre}
         </h1>
-        <p style={{ fontSize: 15, color: "var(--ant-color-text-description)", margin: 0, maxWidth: 800, lineHeight: 1.75 }}>
+        <p style={{ fontSize: 15, color: textSub, margin: 0, maxWidth: 800, lineHeight: 1.75 }}>
           {project.sousTitre}
         </p>
       </div>
@@ -125,34 +133,34 @@ export default function ProjectDetails() {
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
           {project.overview && (
-            <Card title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Project Overview</span>} style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}>
-              <p style={{ fontSize: 14, color: "var(--ant-color-text-secondary)", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{project.overview}</p>
+            <Card title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Project Overview</span>} style={{ borderRadius: 16, border: `1px solid ${border}` }}>
+              <p style={{ fontSize: 14, color: textSub, lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{project.overview}</p>
             </Card>
           )}
 
           {project.contexte && (
-            <Card title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Context</span>} style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}>
-              <p style={{ fontSize: 14, color: "var(--ant-color-text-secondary)", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{project.contexte}</p>
+            <Card title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Context</span>} style={{ borderRadius: 16, border: `1px solid ${border}` }}>
+              <p style={{ fontSize: 14, color: textSub, lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{project.contexte}</p>
             </Card>
           )}
 
           {project.solution && (
-            <Card title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Solution Implemented</span>} style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}>
-              <p style={{ fontSize: 14, color: "var(--ant-color-text-secondary)", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{project.solution}</p>
+            <Card title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Solution Implemented</span>} style={{ borderRadius: 16, border: `1px solid ${border}` }}>
+              <p style={{ fontSize: 14, color: textSub, lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{project.solution}</p>
             </Card>
           )}
 
           {project.resultat && (
-            <Card title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Result</span>} style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}>
-              <p style={{ fontSize: 14, color: "var(--ant-color-text-secondary)", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{project.resultat}</p>
+            <Card title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Result</span>} style={{ borderRadius: 16, border: `1px solid ${border}` }}>
+              <p style={{ fontSize: 14, color: textSub, lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{project.resultat}</p>
             </Card>
           )}
 
           {galleryImgs.length > 0 && (
             <Card
-              title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Project Gallery</span>}
-              extra={<span style={{ fontSize: 12, color: "var(--ant-color-text-description)" }}>Click to open</span>}
-              style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}
+              title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Project Gallery</span>}
+              extra={<span style={{ fontSize: 12, color: textSub }}>Click to open</span>}
+              style={{ borderRadius: 16, border: `1px solid ${border}` }}
             >
               <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 8 }}>
                 {galleryImgs.map((img, idx) => (
@@ -160,7 +168,7 @@ export default function ProjectDetails() {
                     <img
                       src={img}
                       alt={`Gallery ${idx + 1}`}
-                      style={{ width: 220, height: 140, objectFit: "cover", borderRadius: 12, border: "1px solid var(--ant-color-border-secondary)", cursor: "pointer", transition: "opacity 0.2s" }}
+                      style={{ width: 220, height: 140, objectFit: "cover", borderRadius: 12, border: `1px solid ${border}`, cursor: "pointer", transition: "opacity 0.2s" }}
                       onMouseOver={(e) => (e.currentTarget.style.opacity = "0.85")}
                       onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
                     />
@@ -174,16 +182,16 @@ export default function ProjectDetails() {
         {/* RIGHT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: 24, position: "sticky", top: 24 }}>
           <Card
-            title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Supporting Information</span>}
-            style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}
+            title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Supporting Information</span>}
+            style={{ borderRadius: 16, border: `1px solid ${border}` }}
             styles={{ body: { padding: 0 } }}
           >
             <Descriptions
               column={1}
               bordered
               size="middle"
-              labelStyle={{ fontWeight: 600, color: "var(--ant-color-text-description)", fontSize: 13, width: 110, background: "#fafafa" }}
-              contentStyle={{ fontSize: 13, color: "#023B6A", fontWeight: 600 }}
+              labelStyle={{ fontWeight: 600, color: textSub, fontSize: 13, width: 110, background: bgCard }}
+              contentStyle={{ fontSize: 13, color: primary, fontWeight: 600 }}
             >
               <Descriptions.Item label="Category">{project.categorie || "—"}</Descriptions.Item>
               <Descriptions.Item label="Service">{project.service || "—"}</Descriptions.Item>
@@ -197,7 +205,7 @@ export default function ProjectDetails() {
           </Card>
 
           {project.besoins?.length > 0 && (
-            <Card title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>The Need</span>} style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}>
+            <Card title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>The Need</span>} style={{ borderRadius: 16, border: `1px solid ${border}` }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {project.besoins.map((need, idx) => (
                   <Tag key={idx} color="blue" style={{ borderRadius: 6, padding: "4px 12px", fontSize: 13, fontWeight: 500 }}>
@@ -209,10 +217,10 @@ export default function ProjectDetails() {
           )}
 
           {project.technologies?.length > 0 && (
-            <Card title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Technology Used</span>} style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}>
+            <Card title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Technology Used</span>} style={{ borderRadius: 16, border: `1px solid ${border}` }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {project.technologies.map((tech, idx) => (
-                  <Tag key={idx} style={{ borderRadius: 6, padding: "4px 12px", fontSize: 13, fontWeight: 500, backgroundColor: "var(--ant-color-bg-layout)", borderColor: "var(--ant-color-border)", color: "var(--ant-color-text-secondary)" }}>
+                  <Tag key={idx} style={{ borderRadius: 6, padding: "4px 12px", fontSize: 13, fontWeight: 500, backgroundColor: bgCard, borderColor: border, color: textSub }}>
                     {tech}
                   </Tag>
                 ))}

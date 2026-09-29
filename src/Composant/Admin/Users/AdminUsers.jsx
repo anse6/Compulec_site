@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import {
   Input,
   Table,
@@ -39,6 +40,13 @@ const formatDate = (dateStr) => {
 };
 
 export default function AdminUsers() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [search, setSearch] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -146,7 +154,7 @@ export default function AdminUsers() {
             email={record.email}
           />
           <div>
-            <div className="font-semibold text-slate-900 dark:text-white text-[13px]">
+            <div className="font-semibold  text-[13px]" style={{ color: textMain }}>
               {record.prenom} {record.nom}
             </div>
             <div className="text-[11px] text-slate-400">
@@ -161,7 +169,7 @@ export default function AdminUsers() {
       dataIndex: "email",
       key: "email",
       render: (text) => (
-        <span className="text-[13px] text-slate-700 dark:text-slate-200">{text}</span>
+        <span className="text-[13px] " style={{ color: textMain }}>{text}</span>
       ),
     },
     {
@@ -170,11 +178,7 @@ export default function AdminUsers() {
       key: "role",
       render: (role) => (
         <span
-          className={`text-[12px] font-semibold px-2 py-0.5 rounded-full ${
-            role === "ADMIN"
-              ? "bg-[#023B6A]/10 text-[#023B6A]"
-              : "bg-purple-100 text-purple-700"
-          }`}
+          className="text-[12px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: role === "ADMIN" ? (isDark ? "rgba(56, 189, 248, 0.15)" : "rgba(2, 59, 106, 0.1)") : (isDark ? "rgba(168, 85, 247, 0.2)" : "#F3E8FF"), color: role === "ADMIN" ? primary : (isDark ? "#D8B4FE" : "#7E22CE") }}
         >
           {role}
         </span>
@@ -185,7 +189,7 @@ export default function AdminUsers() {
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date) => (
-        <span className="text-[13px] text-slate-500 dark:text-slate-400">{formatDate(date)}</span>
+        <span className="text-[13px] " style={{ color: textSub }}>{formatDate(date)}</span>
       ),
     },
     {
@@ -210,7 +214,7 @@ export default function AdminUsers() {
           {/* View */}
           <button
             onClick={() => handleViewDetails(record)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-[12px] font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-800/50 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5  border  rounded-md text-[12px] font-medium  hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-800/50 transition-colors cursor-pointer" style={{ color: textMain }} style={{ borderColor: border }} style={{ backgroundColor: bgCard }}
           >
             <EyeOutlined />
           </button>
@@ -218,7 +222,7 @@ export default function AdminUsers() {
           {/* Edit */}
           <button
             onClick={() => handleEditUser(record)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#023B6A] border border-[#023B6A] rounded-md text-[12px] font-medium text-white hover:bg-[#04305a] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-white transition-colors cursor-pointer" style={{ backgroundColor: primary, borderColor: primary, borderWidth: 1, borderStyle: "solid" }}
           >
             <EditOutlined />
           </button>
@@ -286,8 +290,8 @@ export default function AdminUsers() {
         {/* HEADER */}
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-[26px] font-bold text-[#023B6A] mb-1">Users</h1>
-            <p className="text-[13px] text-slate-500 dark:text-slate-400 m-0">
+            <h1 className="text-[26px] font-bold  mb-1" style={{ color: primary }}>Users</h1>
+            <p className="text-[13px]  m-0" style={{ color: textSub }}>
               {isFetching
                 ? "Actualisation..."
                 : `${allUsers.length} utilisateur(s) dans le système.`}
@@ -295,7 +299,7 @@ export default function AdminUsers() {
           </div>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-[#023B6A] text-white px-5 py-2.5 rounded-lg font-bold text-sm border-none cursor-pointer hover:bg-[#04305a] transition-colors flex items-center gap-2"
+            className="text-white px-5 py-2.5 rounded-lg font-bold text-sm border-none cursor-pointer transition-colors flex items-center gap-2" style={{ backgroundColor: primary }}
           >
             <span>+</span> Add Manager
           </button>
@@ -309,13 +313,13 @@ export default function AdminUsers() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ width: 280 }}
-            className="rounded-lg py-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
+            className="rounded-lg py-2   shadow-sm" style={{ borderColor: border }} style={{ backgroundColor: bgCard }}
             allowClear
           />
         </div>
 
         {/* TABLE */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div className=" rounded-xl overflow-hidden shadow-sm" style={{ backgroundColor: bgCard, border: `1px solid ${border}` }}>
           {isLoading ? (
             <div className="flex justify-center items-center py-20">
               <Spin size="large" />

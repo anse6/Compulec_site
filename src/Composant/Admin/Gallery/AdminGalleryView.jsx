@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAdminTheme } from "../AdminThemeContext";
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
@@ -13,29 +14,52 @@ const INITIAL_DATA = [
 ];
 
 export default function AdminGalleryView() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+  const bgLayout = isDark ? "#0F172A" : "#F8FAFC";
+
   const { id } = useParams();
   const navigate = useNavigate();
   const item = INITIAL_DATA.find(i => i.id === Number(id)) || {};
 
+  const actionBtnStyle = {
+    background: bgCard,
+    border: `1px solid ${border}`,
+    borderRadius: 8,
+    padding: '8px 16px',
+    fontSize: 13,
+    fontWeight: 600,
+    color: primary,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    transition: 'all 0.2s',
+  };
+
   return (
-    <div style={{ fontFamily: "'Poppins', sans-serif", padding: 40, background: '#F8FAFC' }}>
+    <div style={{ fontFamily: "'Poppins', sans-serif", padding: 40, background: bgLayout }}>
       {/* Back */}
       <div
         onClick={() => navigate('/admin/gallery')}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#023B6A', fontWeight: 600, cursor: 'pointer', marginBottom: 24 }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: primary, fontWeight: 600, cursor: 'pointer', marginBottom: 24 }}
       >
         <ArrowLeftOutlined /> Back to Gallery
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 32 }}>
         {/* Large Image */}
-        <div style={{ background: '#fff', padding: 24, borderRadius: 12, border: '1px solid #EEF2F7' }}>
+        <div style={{ background: bgCard, padding: 24, borderRadius: 12, border: `1px solid ${border}` }}>
           <img src={item.img} alt={item.title} style={{ width: '100%', height: 'auto', borderRadius: 8, objectFit: 'contain' }} />
         </div>
 
         {/* Info & Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#023B6A', margin: 0 }}>{item.title}</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: primary, margin: 0 }}>{item.title}</h2>
           <div style={{ display: 'flex', gap: 12 }}>
             <button style={actionBtnStyle} onClick={() => navigate(`/admin/gallery/edit/${item.id}`)}>
               <EditOutlined /> Edit
@@ -49,18 +73,3 @@ export default function AdminGalleryView() {
     </div>
   );
 }
-
-const actionBtnStyle = {
-  background: '#fff',
-  border: '1px solid #E2E8F0',
-  borderRadius: 8,
-  padding: '8px 16px',
-  fontSize: 13,
-  fontWeight: 600,
-  color: '#023B6A',
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 8,
-  transition: 'all 0.2s',
-};

@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import {
   Modal,
   Form,
@@ -38,6 +39,13 @@ function getInitials(name = "") {
 }
 
 export default function AddUserModal({ isOpen, onClose }) {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [form] = Form.useForm();
   const prenomVal = Form.useWatch("prenom", form) || "";
   const nomVal = Form.useWatch("nom", form) || "";
@@ -87,7 +95,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           <Avatar
             size={40}
             style={{
-              background: fullName ? color : "#023B6A",
+              background: fullName ? color : primary,
               fontWeight: 700,
               fontSize: 15,
             }}
@@ -95,7 +103,7 @@ export default function AddUserModal({ isOpen, onClose }) {
             {fullName ? initials : <UserAddOutlined />}
           </Avatar>
           <div>
-            <p className="text-[18px] font-bold text-[#023B6A] m-0 leading-tight">
+            <p className="text-[18px] font-bold  m-0 leading-tight" style={{ color: primary }}>
               Add Manager
             </p>
             <p className="text-[12px] text-slate-400 m-0">
@@ -120,7 +128,7 @@ export default function AddUserModal({ isOpen, onClose }) {
         <div className="flex gap-4">
           <Form.Item
             label={
-              <span className="text-[13px] font-semibold text-[#023B6A]">
+              <span className="text-[13px] font-semibold " style={{ color: primary }}>
                 Prénom
               </span>
             }
@@ -135,7 +143,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           </Form.Item>
           <Form.Item
             label={
-              <span className="text-[13px] font-semibold text-[#023B6A]">
+              <span className="text-[13px] font-semibold " style={{ color: primary }}>
                 Nom
               </span>
             }
@@ -154,7 +162,7 @@ export default function AddUserModal({ isOpen, onClose }) {
         <div className="flex gap-4">
           <Form.Item
             label={
-              <span className="text-[13px] font-semibold text-[#023B6A]">
+              <span className="text-[13px] font-semibold " style={{ color: primary }}>
                 Email
               </span>
             }
@@ -172,7 +180,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           </Form.Item>
           <Form.Item
             label={
-              <span className="text-[13px] font-semibold text-[#023B6A]">
+              <span className="text-[13px] font-semibold " style={{ color: primary }}>
                 Téléphone
               </span>
             }
@@ -198,7 +206,7 @@ export default function AddUserModal({ isOpen, onClose }) {
         <div className="flex gap-4">
           <Form.Item
             label={
-              <span className="text-[13px] font-semibold text-[#023B6A]">
+              <span className="text-[13px] font-semibold " style={{ color: primary }}>
                 Fonction
               </span>
             }
@@ -214,7 +222,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           </Form.Item>
           <Form.Item
             label={
-              <span className="text-[13px] font-semibold text-[#023B6A]">
+              <span className="text-[13px] font-semibold " style={{ color: primary }}>
                 Sexe
               </span>
             }
@@ -236,7 +244,7 @@ export default function AddUserModal({ isOpen, onClose }) {
         {/* Date de naissance */}
         <Form.Item
           label={
-            <span className="text-[13px] font-semibold text-[#023B6A]">
+            <span className="text-[13px] font-semibold " style={{ color: primary }}>
               Date de naissance
             </span>
           }
@@ -255,7 +263,7 @@ export default function AddUserModal({ isOpen, onClose }) {
         <div className="flex gap-4">
           <Form.Item
             label={
-              <span className="text-[13px] font-semibold text-[#023B6A]">
+              <span className="text-[13px] font-semibold " style={{ color: primary }}>
                 Mot de passe
               </span>
             }
@@ -274,7 +282,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           </Form.Item>
           <Form.Item
             label={
-              <span className="text-[13px] font-semibold text-[#023B6A]">
+              <span className="text-[13px] font-semibold " style={{ color: primary }}>
                 Confirmer le mot de passe
               </span>
             }
@@ -314,7 +322,7 @@ export default function AddUserModal({ isOpen, onClose }) {
             htmlType="submit"
             icon={<UserAddOutlined />}
             loading={isLoading}
-            style={{ background: "#023B6A", borderColor: "#023B6A" }}
+            style={{ background: primary, borderColor: primary }}
             className="rounded-lg px-6"
           >
             Créer le Manager

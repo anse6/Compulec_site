@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeftOutlined,
@@ -28,6 +29,13 @@ function getImageUrl(img) {
 const formatDate = (d) => (d ? dayjs(d).format("DD MMMM YYYY, HH:mm") : "—");
 
 export default function NewsDetails() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -81,7 +89,7 @@ export default function NewsDetails() {
         type="link"
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate("/admin/news")}
-        style={{ padding: 0, color: "#023B6A", fontWeight: 600, marginBottom: 24 }}
+        style={{ padding: 0, color: primary, fontWeight: 600, marginBottom: 24 }}
       >
         Back to News
       </Button>
@@ -95,7 +103,7 @@ export default function NewsDetails() {
             borderRadius: 16,
             overflow: "hidden",
             marginBottom: 24,
-            border: "1px solid var(--ant-color-border-secondary)",
+            border: `1px solid ${border}`,
             boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
             position: "relative",
           }}
@@ -115,8 +123,8 @@ export default function NewsDetails() {
       {/* Header Info Box */}
       <div
         style={{
-          backgroundColor: "var(--ant-color-bg-container)",
-          border: "1px solid var(--ant-color-border-secondary)",
+          backgroundColor: bgCard,
+          border: `1px solid ${border}`,
           borderRadius: 16,
           padding: 32,
           marginBottom: 32,
@@ -150,10 +158,10 @@ export default function NewsDetails() {
           </div>
         </div>
 
-        <h1 style={{ fontWeight: 800, fontSize: 28, color: "#023B6A", marginBottom: 8, lineHeight: 1.3 }}>
+        <h1 style={{ fontWeight: 800, fontSize: 28, color: primary, marginBottom: 8, lineHeight: 1.3 }}>
           {article.title}
         </h1>
-        <p style={{ fontSize: 15, color: "var(--ant-color-text-description)", margin: 0, maxWidth: 800, lineHeight: 1.75 }}>
+        <p style={{ fontSize: 15, color: textSub, margin: 0, maxWidth: 800, lineHeight: 1.75 }}>
           {article.subtitle}
         </p>
       </div>
@@ -166,10 +174,10 @@ export default function NewsDetails() {
 
           {article.heading && (
             <Card
-              title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Heading</span>}
-              style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}
+              title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Heading</span>}
+              style={{ borderRadius: 16, border: `1px solid ${border}` }}
             >
-              <p style={{ fontSize: 14, color: "var(--ant-color-text-secondary)", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>
+              <p style={{ fontSize: 14, color: textSub, lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>
                 {article.heading}
               </p>
             </Card>
@@ -177,10 +185,10 @@ export default function NewsDetails() {
 
           {article.overview && (
             <Card
-              title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Overview</span>}
-              style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}
+              title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Overview</span>}
+              style={{ borderRadius: 16, border: `1px solid ${border}` }}
             >
-              <p style={{ fontSize: 14, color: "var(--ant-color-text-secondary)", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>
+              <p style={{ fontSize: 14, color: textSub, lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>
                 {article.overview}
               </p>
             </Card>
@@ -191,16 +199,16 @@ export default function NewsDetails() {
         {/* RIGHT COLUMN — métadonnées */}
         <div style={{ display: "flex", flexDirection: "column", gap: 24, position: "sticky", top: 24 }}>
           <Card
-            title={<span style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}>Article Information</span>}
-            style={{ borderRadius: 16, border: "1px solid var(--ant-color-border-secondary)" }}
+            title={<span style={{ color: primary, fontWeight: 700, fontSize: 16 }}>Article Information</span>}
+            style={{ borderRadius: 16, border: `1px solid ${border}` }}
             styles={{ body: { padding: 0 } }}
           >
             <Descriptions
               column={1}
               bordered
               size="middle"
-              labelStyle={{ fontWeight: 600, color: "var(--ant-color-text-description)", fontSize: 13, width: 110, background: "#fafafa" }}
-              contentStyle={{ fontSize: 13, color: "#023B6A", fontWeight: 600 }}
+              labelStyle={{ fontWeight: 600, color: textSub, fontSize: 13, width: 110, background: "#fafafa" }}
+              contentStyle={{ fontSize: 13, color: primary, fontWeight: 600 }}
             >
               <Descriptions.Item label="Status">
                 <Tag

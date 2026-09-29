@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import { Modal, Avatar, Button, Descriptions, Divider } from 'antd';
 import { MailOutlined } from '@ant-design/icons';
 import StatusToggle from './StatusToggle';
@@ -15,6 +16,13 @@ function getInitials(name = '') {
 }
 
 export default function UserDetailsModal({ isOpen, onClose, user }) {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   if (!user) return null;
 
   const color    = getColor(user.name);
@@ -32,7 +40,7 @@ export default function UserDetailsModal({ isOpen, onClose, user }) {
             {initials}
           </Avatar>
           <div>
-            <p className="text-[18px] font-bold text-[#023B6A] m-0 leading-tight">User Details</p>
+            <p className="text-[18px] font-bold  m-0 leading-tight" style={{ color: primary }}>User Details</p>
             <p className="text-[12px] text-slate-400 m-0">Administrator account information</p>
           </div>
         </div>
@@ -54,7 +62,7 @@ export default function UserDetailsModal({ isOpen, onClose, user }) {
           <p className="text-[17px] font-bold text-slate-800 m-0">{user.name}</p>
           <a
             href={`mailto:${user.email}`}
-            className="text-[13px] text-[#023B6A] hover:underline font-medium flex items-center gap-1.5 justify-center mt-1"
+            className="text-[13px]  hover:underline font-medium flex items-center gap-1.5 justify-center mt-1" style={{ color: primary }}
           >
             <MailOutlined /> {user.email}
           </a>
@@ -62,7 +70,7 @@ export default function UserDetailsModal({ isOpen, onClose, user }) {
       </div>
 
       {/* Descriptions */}
-      <Descriptions column={1} bordered size="small" labelStyle={{ fontWeight: 600, color: '#023B6A', fontSize: 13, width: 130 }} contentStyle={{ fontSize: 13 }}>
+      <Descriptions column={1} bordered size="small" labelStyle={{ fontWeight: 600, color: primary, fontSize: 13, width: 130 }} contentStyle={{ fontSize: 13 }}>
         <Descriptions.Item label="Role">{user.role}</Descriptions.Item>
         <Descriptions.Item label="Last Activity">{user.received}</Descriptions.Item>
         <Descriptions.Item label="Status">

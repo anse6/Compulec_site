@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import { Modal, Form, Input, Button, Avatar, Tag, Divider, DatePicker, Select } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -19,6 +20,13 @@ function getInitials(name = '') {
 }
 
 export default function EditUserModal({ isOpen, onClose, user }) {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [form] = Form.useForm();
   const [updateUser, { isLoading }] = useUpdateUserMutation();
 
@@ -70,7 +78,7 @@ export default function EditUserModal({ isOpen, onClose, user }) {
             {initials}
           </Avatar>
           <div>
-            <p className="text-[18px] font-bold text-[#023B6A] m-0 leading-tight">Edit User</p>
+            <p className="text-[18px] font-bold  m-0 leading-tight" style={{ color: primary }}>Edit User</p>
             {fullName && (
               <p className="text-[12px] text-slate-400 m-0">
                 Editing <span className="font-semibold text-slate-500">{fullName}</span>
@@ -84,7 +92,7 @@ export default function EditUserModal({ isOpen, onClose, user }) {
       <Form form={form} layout="vertical" onFinish={handleFinish} requiredMark={false} className="pt-4">
 
         {/* Email (lecture seule) */}
-        <Form.Item label={<span className="text-[13px] font-semibold text-[#023B6A]">Email Address</span>}>
+        <Form.Item label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Email Address</span>}>
           <Input
             value={user?.email || ''}
             disabled
@@ -96,13 +104,13 @@ export default function EditUserModal({ isOpen, onClose, user }) {
 
         <div className="flex gap-4">
           <Form.Item
-            label={<span className="text-[13px] font-semibold text-[#023B6A]">Prénom</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Prénom</span>}
             name="prenom" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
             <Input size="large" placeholder="Prénom" className="rounded-lg" />
           </Form.Item>
           <Form.Item
-            label={<span className="text-[13px] font-semibold text-[#023B6A]">Nom</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Nom</span>}
             name="nom" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
             <Input size="large" placeholder="Nom" className="rounded-lg" />
@@ -111,7 +119,7 @@ export default function EditUserModal({ isOpen, onClose, user }) {
 
         <div className="flex gap-4">
           <Form.Item
-            label={<span className="text-[13px] font-semibold text-[#023B6A]">Téléphone</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Téléphone</span>}
             name="phone"
             rules={[{ required: true, message: 'Requis' }, { pattern: /^[0-9]{9}$/, message: '9 chiffres requis' }]}
             className="flex-1"
@@ -119,7 +127,7 @@ export default function EditUserModal({ isOpen, onClose, user }) {
             <Input size="large" placeholder="690000000" className="rounded-lg" />
           </Form.Item>
           <Form.Item
-            label={<span className="text-[13px] font-semibold text-[#023B6A]">Sexe</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Sexe</span>}
             name="sexe" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
             <Select size="large" placeholder="Sélectionner" className="rounded-lg">
@@ -131,20 +139,20 @@ export default function EditUserModal({ isOpen, onClose, user }) {
 
         <div className="flex gap-4">
           <Form.Item
-            label={<span className="text-[13px] font-semibold text-[#023B6A]">Fonction</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Fonction</span>}
             name="fonction" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
             <Input size="large" placeholder="Ex: Responsable IT" className="rounded-lg" />
           </Form.Item>
           <Form.Item
-            label={<span className="text-[13px] font-semibold text-[#023B6A]">Date de naissance</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Date de naissance</span>}
             name="dateNaissance" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
             <DatePicker size="large" className="w-full rounded-lg" format="DD/MM/YYYY" />
           </Form.Item>
         </div>
 
-        <Form.Item label={<span className="text-[13px] font-semibold text-[#023B6A]">Rôle</span>}>
+        <Form.Item label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Rôle</span>}>
           <div className="flex items-center h-[42px] px-3 bg-[#EEF2FF] border border-[#E0E7FF] rounded-lg gap-2">
             <Tag color="blue" style={{ margin: 0 }}>{user?.role || 'Manager'}</Tag>
             <span className="text-[11px] text-slate-400 ml-auto">Modifiable via "Change Role"</span>
@@ -156,7 +164,7 @@ export default function EditUserModal({ isOpen, onClose, user }) {
         <div className="flex justify-end gap-3">
           <Button size="large" onClick={onClose} className="rounded-lg px-6">Annuler</Button>
           <Button size="large" type="primary" htmlType="submit" icon={<EditOutlined />} loading={isLoading}
-            style={{ background: '#023B6A', borderColor: '#023B6A' }} className="rounded-lg px-6">
+            style={{ background: primary, borderColor: primary }} className="rounded-lg px-6">
             Save Changes
           </Button>
         </div>

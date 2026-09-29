@@ -1,5 +1,6 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { AdminThemeContext } from "./AdminThemeContext";
 import { useSelector, useDispatch } from "react-redux";
 import {
   Badge,
@@ -376,7 +377,7 @@ function NotificationDropdown() {
       content={content}
       trigger="click"
       placement="bottomRight"
-      overlayInnerStyle={{ padding: 12, borderRadius: 8 }}
+      styles={{ body: { padding: 12, borderRadius: 8 } }}
     >
       <Badge
         count={unreadCount}
@@ -410,16 +411,23 @@ function NotificationDropdown() {
 
 //  Top Header
 function TopHeader({ isDarkMode, setIsDarkMode, user }) {
+  const bgCard = isDarkMode ? "#1E293B" : "#fff";
+  const border = isDarkMode ? "#334155" : "#EEF2F7";
+  const textMain = isDarkMode ? "#F8FAFC" : "#0F172A";
+  const textSub = isDarkMode ? "#94A3B8" : "#64748B";
+  const inputBg = isDarkMode ? "#0F172A" : "#F8FAFC";
+  const inputBorder = isDarkMode ? "#334155" : "#E2E8F0";
+
   return (
     <header
       style={{
-        background: "#fff",
+        background: bgCard,
         padding: "0 32px",
         height: 64,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        borderBottom: "1px solid #EEF2F7",
+        borderBottom: `1px solid ${border}`,
         position: "sticky",
         top: 0,
         zIndex: 100,
@@ -434,7 +442,7 @@ function TopHeader({ isDarkMode, setIsDarkMode, user }) {
             left: 14,
             top: "50%",
             transform: "translateY(-50%)",
-            color: "#94A3B8",
+            color: textSub,
             fontSize: 15,
             zIndex: 1,
           }}
@@ -446,12 +454,12 @@ function TopHeader({ isDarkMode, setIsDarkMode, user }) {
             paddingLeft: 40,
             paddingRight: 16,
             height: 40,
-            border: "1.5px solid #E2E8F0",
+            border: `1.5px solid ${inputBorder}`,
             borderRadius: 10,
             fontSize: 13,
-            color: "#475569",
+            color: textMain,
             outline: "none",
-            background: "#F8FAFC",
+            background: inputBg,
             fontFamily: "'Poppins', sans-serif",
           }}
         />
@@ -525,7 +533,7 @@ function TopHeader({ isDarkMode, setIsDarkMode, user }) {
               style={{
                 fontWeight: 700,
                 fontSize: 13,
-                color: "#0F172A",
+                color: textMain,
                 margin: 0,
                 lineHeight: 1.3,
               }}
@@ -534,7 +542,7 @@ function TopHeader({ isDarkMode, setIsDarkMode, user }) {
                 ? `${user.prenom ?? ""} ${user.nom ?? ""}`.trim()
                 : "Administrateur"}
             </p>
-            <p style={{ fontSize: 11, color: "#94A3B8", margin: 0 }}>
+            <p style={{ fontSize: 11, color: textSub, margin: 0 }}>
               {user?.role ?? "Admin"}
             </p>
           </div>
@@ -666,7 +674,9 @@ export default function AdminLayout() {
             user={user}
           />
           <div style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>
-            <Outlet />
+            <AdminThemeContext.Provider value={isDarkMode}>
+              <Outlet />
+            </AdminThemeContext.Provider>
           </div>
         </main>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import {
   Table,
   ConfigProvider,
@@ -146,7 +147,7 @@ export function VisibilityToggle({ projetId, publie }) {
         <div style={{ marginTop: 8 }}>
           <p
             style={{
-              color: "var(--ant-color-text-description)",
+              color: textSub,
               margin: "0 0 12px",
             }}
           >
@@ -371,6 +372,16 @@ const CATEGORIES = [
 //  Main Component
 
 export default function AdminProjects() {
+  const isDark = useAdminTheme();
+  // ── theme tokens ──────────────────────────────────────────────────────
+  const bg        = isDark ? "#0F172A" : "#ffffff";
+  const bgCard    = isDark ? "#1E293B" : "#ffffff";
+  const bgHover   = isDark ? "#334155" : "#F8FAFC";
+  const border    = isDark ? "#334155" : "#E2E8F0";
+  const textMain  = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub   = isDark ? "#94A3B8" : "#64748B";
+  const primary   = isDark ? "#38bdf8" : "#023B6A";
+
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState("All");
@@ -448,7 +459,7 @@ export default function AdminProjects() {
               height: 48,
               borderRadius: 8,
               objectFit: "cover",
-              border: "1px solid #E2E8F0",
+              border: `1px solid ${border}`,
               flexShrink: 0,
             }}
           />
@@ -456,7 +467,7 @@ export default function AdminProjects() {
             <div
               style={{
                 fontWeight: 700,
-                color: "var(--ant-color-text)",
+                color: textMain,
                 fontSize: 13,
               }}
             >
@@ -465,7 +476,7 @@ export default function AdminProjects() {
             <div
               style={{
                 fontSize: 11,
-                color: "var(--ant-color-text-description)",
+                color: textSub,
               }}
             >
               {record.clientName || record.secteur || "—"}
@@ -481,7 +492,7 @@ export default function AdminProjects() {
       render: (t) => (
         <span
           style={{
-            color: "var(--ant-color-text-secondary)",
+            color: textSub,
             fontWeight: 500,
             fontSize: 12,
           }}
@@ -496,7 +507,7 @@ export default function AdminProjects() {
       key: "localisation",
       render: (t) => (
         <span
-          style={{ color: "var(--ant-color-text-secondary)", fontSize: 12 }}
+          style={{ color: textSub, fontSize: 12 }}
         >
           {t || "—"}
         </span>
@@ -532,14 +543,14 @@ export default function AdminProjects() {
             type="text"
             icon={<EyeOutlined />}
             onClick={() => navigate(`/admin/projects/preview/${record.id}`)}
-            style={{ color: "var(--ant-color-text-description)" }}
+            style={{ color: textSub }}
             title="Voir"
           />
           <Button
             type="text"
             icon={<EditOutlined />}
             onClick={() => navigate(`/admin/projects/edit/${record.id}`)}
-            style={{ color: "var(--ant-color-text-description)" }}
+            style={{ color: textSub }}
             title="Modifier"
           />
           <PublishButton projetId={record.id} publie={record.publie} />
@@ -573,7 +584,7 @@ export default function AdminProjects() {
             style={{
               fontSize: 26,
               fontWeight: 800,
-              color: "var(--ant-color-text)",
+              color: textMain,
               margin: "0 0 4px",
             }}
           >
@@ -582,7 +593,7 @@ export default function AdminProjects() {
           <p
             style={{
               fontSize: 13,
-              color: "var(--ant-color-text-description)",
+              color: textSub,
               margin: 0,
             }}
           >
@@ -593,9 +604,9 @@ export default function AdminProjects() {
           size="large"
           onClick={() => navigate("/admin/projects/add")}
           style={{
-            backgroundColor: "#023B6A",
+            backgroundColor: primary,
             color: "#ffffff",
-            borderColor: "#023B6A",
+            borderColor: primary,
             borderRadius: 10,
             fontWeight: 700,
           }}
@@ -629,7 +640,7 @@ export default function AdminProjects() {
               label: "Filtrés",
               value: filtered.length,
               bg: "#F8FAFC",
-              color: "var(--ant-color-text-secondary)",
+              color: textSub,
             },
           ].map((s) => (
             <div
@@ -649,7 +660,7 @@ export default function AdminProjects() {
                 style={{
                   fontSize: 11,
                   fontWeight: 600,
-                  color: "var(--ant-color-text-description)",
+                  color: textSub,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                 }}
@@ -663,8 +674,8 @@ export default function AdminProjects() {
       {/*  Barre de filtres  */}
       <div
         style={{
-          backgroundColor: "#ffffff",
-          border: "1px solid #E2E8F0",
+          backgroundColor: bgCard,
+          border: `1px solid ${border}`,
           borderRadius: 14,
           padding: "16px 20px",
           display: "flex",
@@ -748,7 +759,7 @@ export default function AdminProjects() {
             icon={view === "list" ? <AppstoreOutlined /> : <BarsOutlined />}
             onClick={() => setView(view === "list" ? "grid" : "list")}
             style={{
-              color: "var(--ant-color-text-description)",
+              color: textSub,
               borderRadius: 8,
             }}
             title={view === "list" ? "Vue grille" : "Vue liste"}
@@ -759,7 +770,7 @@ export default function AdminProjects() {
       {/*  Résultat filtre  */}
       {hasActiveFilters && (
         <div
-          style={{ fontSize: 12, color: "var(--ant-color-text-description)" }}
+          style={{ fontSize: 12, color: textSub }}
         >
           <FilterOutlined style={{ marginRight: 4 }} />
           {filtered.length} résultat{filtered.length > 1 ? "s" : ""} sur{" "}
@@ -789,8 +800,8 @@ export default function AdminProjects() {
       {!isError && (
         <div
           style={{
-            backgroundColor: "#ffffff",
-            border: "1px solid #E2E8F0",
+            backgroundColor: bgCard,
+            border: `1px solid ${border}`,
             borderRadius: 16,
             overflow: "hidden",
             boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
@@ -879,14 +890,14 @@ export default function AdminProjects() {
                   style={{
                     borderRadius: 16,
                     overflow: "hidden",
-                    border: "1px solid #E2E8F0",
+                    border: `1px solid ${border}`,
                   }}
                 >
                   <p
                     style={{
                       fontSize: 10,
                       fontWeight: 700,
-                      color: "var(--ant-color-text-description)",
+                      color: textSub,
                       textTransform: "uppercase",
                       letterSpacing: "0.1em",
                       marginBottom: 8,
@@ -898,7 +909,7 @@ export default function AdminProjects() {
                     style={{
                       fontSize: 15,
                       fontWeight: 700,
-                      color: "#023B6A",
+                      color: isDark ? "#38bdf8" : "#023B6A",
                       marginBottom: 8,
                       lineHeight: 1.4,
                       display: "-webkit-box",
@@ -912,7 +923,7 @@ export default function AdminProjects() {
                   <p
                     style={{
                       fontSize: 13,
-                      color: "var(--ant-color-text-description)",
+                      color: textSub,
                       flex: 1,
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
@@ -929,7 +940,7 @@ export default function AdminProjects() {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      borderTop: "1px solid #E2E8F0",
+                      borderTop: `1px solid ${border}`,
                       paddingTop: 16,
                     }}
                   >

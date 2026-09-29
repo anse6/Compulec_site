@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import { Form, Input, Select, Button, Upload, Spin, message } from "antd";
 import {
   ArrowLeftOutlined, InboxOutlined, DeleteOutlined,
@@ -25,6 +26,12 @@ function getImageUrl(img) {
 // ── Tag list editor (besoins / technologies) ────────────────────────────────
 
 function TagListEditor({ label, value = [], onChange }) {
+  const isDark = useAdminTheme();
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+
   const [inputValue, setInputValue] = useState("");
 
   const add = () => {
@@ -39,14 +46,14 @@ function TagListEditor({ label, value = [], onChange }) {
 
   return (
     <div style={{ marginBottom: 24 }}>
-      <span style={{ display: "block", fontWeight: 600, color: "#023B6A", marginBottom: 8 }}>{label}</span>
+      <span style={{ display: "block", fontWeight: 600, color: primary, marginBottom: 8 }}>{label}</span>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
         {value.map((item, i) => (
           <div
             key={i}
-            style={{ display: "flex", alignItems: "center", gap: 6, background: "#F1F5F9", border: "1px solid var(--ant-color-border)", borderRadius: 8, padding: "4px 10px 4px 12px" }}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: bgCard, border: `1px solid ${border}`, borderRadius: 8, padding: "4px 10px 4px 12px" }}
           >
-            <span style={{ fontSize: 13, color: "var(--ant-color-text)" }}>{item}</span>
+            <span style={{ fontSize: 13, color: textMain }}>{item}</span>
             <DeleteOutlined onClick={() => remove(item)} style={{ color: "var(--ant-color-error)", cursor: "pointer", fontSize: 11 }} />
           </div>
         ))}
@@ -68,6 +75,13 @@ function TagListEditor({ label, value = [], onChange }) {
 // ── Main form ────────────────────────────────────────────────────────────────
 
 export default function ProjectForm() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const navigate     = useNavigate();
   const { id }       = useParams();
   const isEdit       = !!id;
@@ -177,17 +191,17 @@ export default function ProjectForm() {
       <div style={{ marginBottom: 24 }}>
         <div
           onClick={() => navigate("/admin/projects")}
-          style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#023B6A", fontWeight: 600, cursor: "pointer", marginBottom: 16 }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, color: primary, fontWeight: 600, cursor: "pointer", marginBottom: 16 }}
         >
           <ArrowLeftOutlined /> Back to Projects
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <h1 style={{ fontWeight: 800, fontSize: 26, color: "var(--ant-color-text)", margin: "0 0 6px" }}>
+            <h1 style={{ fontWeight: 800, fontSize: 26, color: textMain, margin: "0 0 6px" }}>
               {isEdit ? "Edit Project" : "Add Project"}
             </h1>
-            <p style={{ fontSize: 13, color: "var(--ant-color-text-description)", margin: 0 }}>
+            <p style={{ fontSize: 13, color: textSub, margin: 0 }}>
               Record a completed engagement and choose how it appears on the website.
             </p>
           </div>
@@ -195,7 +209,7 @@ export default function ProjectForm() {
           <div style={{ display: "flex", gap: 12 }}>
             <Button
               size="large"
-              style={{ borderRadius: 8, fontWeight: 600, borderColor: "var(--ant-color-border)" }}
+              style={{ borderRadius: 8, fontWeight: 600, borderColor: border }}
               onClick={() => navigate("/admin/projects")}
             >
               Cancel
@@ -204,7 +218,7 @@ export default function ProjectForm() {
               size="large"
               icon={<SaveOutlined />}
               loading={isSaving}
-              style={{ borderRadius: 8, fontWeight: 600, borderColor: "var(--ant-color-border)" }}
+              style={{ borderRadius: 8, fontWeight: 600, borderColor: border }}
               onClick={() => {
                 setPublishNow(false);
                 form.submit();
@@ -244,22 +258,22 @@ export default function ProjectForm() {
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
             {/* Project Identity */}
-            <div style={{ backgroundColor: "var(--ant-color-bg-container)", border: "1px solid var(--ant-color-border-secondary)", borderRadius: 12 }}>
+            <div style={{ backgroundColor: bgCard, border: `1px solid ${border}`, borderRadius: 12 }}>
               <div style={{ padding: "24px 24px 0" }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--ant-color-text)", margin: "0 0 4px" }}>Project identity</h2>
-                <p style={{ fontSize: 13, color: "var(--ant-color-text-description)", margin: "0 0 24px" }}>Core information shown in listings</p>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: textMain, margin: "0 0 4px" }}>Project identity</h2>
+                <p style={{ fontSize: 13, color: textSub, margin: "0 0 24px" }}>Core information shown in listings</p>
                 <div style={{ height: 1, background: "#EEF2F7", margin: "0 -24px 24px" }} />
               </div>
               <div style={{ padding: "0 24px 24px" }}>
-                <Form.Item name="titre" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Project Title *</span>} rules={[{ required: true, message: "Required" }]}>
+                <Form.Item name="titre" label={<span style={{ fontWeight: 600, color: primary }}>Project Title *</span>} rules={[{ required: true, message: "Required" }]}>
                   <Input size="large" style={{ borderRadius: 8 }} />
                 </Form.Item>
-                <Form.Item name="sousTitre" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Project Subtitle</span>}>
+                <Form.Item name="sousTitre" label={<span style={{ fontWeight: 600, color: primary }}>Project Subtitle</span>}>
                   <Input size="large" style={{ borderRadius: 8 }} />
                 </Form.Item>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <Form.Item name="categorie" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Category *</span>} rules={[{ required: true, message: "Required" }]}>
+                  <Form.Item name="categorie" label={<span style={{ fontWeight: 600, color: primary }}>Category *</span>} rules={[{ required: true, message: "Required" }]}>
                     <Select size="large" style={{ width: "100%" }}>
                       <Select.Option value="Infrastructure & Network">Infrastructure & Network</Select.Option>
                       <Select.Option value="Computer Security">Computer Security</Select.Option>
@@ -267,7 +281,7 @@ export default function ProjectForm() {
                       <Select.Option value="Digital Solutions">Digital Solutions</Select.Option>
                     </Select>
                   </Form.Item>
-                  <Form.Item name="service" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Service</span>}>
+                  <Form.Item name="service" label={<span style={{ fontWeight: 600, color: primary }}>Service</span>}>
                     <Select size="large" style={{ width: "100%" }} allowClear>
                       <Select.Option value="Network & System Administration Installation">Network & System Administration Installation</Select.Option>
                       <Select.Option value="Video Surveillance">Video Surveillance</Select.Option>
@@ -278,19 +292,19 @@ export default function ProjectForm() {
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <Form.Item name="clientName" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Client Name</span>}>
+                  <Form.Item name="clientName" label={<span style={{ fontWeight: 600, color: primary }}>Client Name</span>}>
                     <Input size="large" style={{ borderRadius: 8 }} />
                   </Form.Item>
-                  <Form.Item name="secteur" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Sector *</span>} rules={[{ required: true, message: "Required" }]}>
+                  <Form.Item name="secteur" label={<span style={{ fontWeight: 600, color: primary }}>Sector *</span>} rules={[{ required: true, message: "Required" }]}>
                     <Input size="large" style={{ borderRadius: 8 }} />
                   </Form.Item>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 0 }}>
-                  <Form.Item name="localisation" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Location *</span>} rules={[{ required: true, message: "Required" }]} style={{ marginBottom: 0 }}>
+                  <Form.Item name="localisation" label={<span style={{ fontWeight: 600, color: primary }}>Location *</span>} rules={[{ required: true, message: "Required" }]} style={{ marginBottom: 0 }}>
                     <Input size="large" style={{ borderRadius: 8 }} />
                   </Form.Item>
-                  <Form.Item name="status" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Completion Status</span>} style={{ marginBottom: 0 }}>
+                  <Form.Item name="status" label={<span style={{ fontWeight: 600, color: primary }}>Completion Status</span>} style={{ marginBottom: 0 }}>
                     <Select size="large" style={{ width: "100%" }}>
                       <Select.Option value="Planned">Planned</Select.Option>
                       <Select.Option value="In progress">In Progress</Select.Option>
@@ -303,17 +317,17 @@ export default function ProjectForm() {
             </div>
 
             {/* Project Narrative */}
-            <div style={{ backgroundColor: "var(--ant-color-bg-container)", border: "1px solid var(--ant-color-border-secondary)", borderRadius: 12 }}>
+            <div style={{ backgroundColor: bgCard, border: `1px solid ${border}`, borderRadius: 12 }}>
               <div style={{ padding: "24px 24px 0" }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--ant-color-text)", margin: "0 0 4px" }}>Project narrative</h2>
-                <p style={{ fontSize: 13, color: "var(--ant-color-text-description)", margin: "0 0 24px" }}>Content shown on the public project page</p>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: textMain, margin: "0 0 4px" }}>Project narrative</h2>
+                <p style={{ fontSize: 13, color: textSub, margin: "0 0 24px" }}>Content shown on the public project page</p>
                 <div style={{ height: 1, background: "#EEF2F7", margin: "0 -24px 24px" }} />
               </div>
               <div style={{ padding: "0 24px 24px" }}>
-                <Form.Item name="overview" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Project Overview *</span>} rules={[{ required: true, message: "Required" }]}>
+                <Form.Item name="overview" label={<span style={{ fontWeight: 600, color: primary }}>Project Overview *</span>} rules={[{ required: true, message: "Required" }]}>
                   <TextArea rows={3} style={{ borderRadius: 8 }} />
                 </Form.Item>
-                <Form.Item name="contexte" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Context *</span>} rules={[{ required: true, message: "Required" }]}>
+                <Form.Item name="contexte" label={<span style={{ fontWeight: 600, color: primary }}>Context *</span>} rules={[{ required: true, message: "Required" }]}>
                   <TextArea rows={3} style={{ borderRadius: 8 }} />
                 </Form.Item>
 
@@ -322,7 +336,7 @@ export default function ProjectForm() {
                   <TagListEditorWrapper label="The Need" />
                 </Form.Item>
 
-                <Form.Item name="solution" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Solution Implemented *</span>} rules={[{ required: true, message: "Required" }]}>
+                <Form.Item name="solution" label={<span style={{ fontWeight: 600, color: primary }}>Solution Implemented *</span>} rules={[{ required: true, message: "Required" }]}>
                   <TextArea rows={3} style={{ borderRadius: 8 }} />
                 </Form.Item>
 
@@ -331,7 +345,7 @@ export default function ProjectForm() {
                   <TagListEditorWrapper label="Technology Used" />
                 </Form.Item>
 
-                <Form.Item name="resultat" label={<span style={{ fontWeight: 600, color: "#023B6A" }}>Result *</span>} rules={[{ required: true, message: "Required" }]} style={{ marginBottom: 0 }}>
+                <Form.Item name="resultat" label={<span style={{ fontWeight: 600, color: primary }}>Result *</span>} rules={[{ required: true, message: "Required" }]} style={{ marginBottom: 0 }}>
                   <TextArea rows={3} style={{ borderRadius: 8 }} />
                 </Form.Item>
               </div>
@@ -342,10 +356,10 @@ export default function ProjectForm() {
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
             {/* Images */}
-            <div style={{ backgroundColor: "var(--ant-color-bg-container)", border: "1px solid var(--ant-color-border-secondary)", borderRadius: 12 }}>
+            <div style={{ backgroundColor: bgCard, border: `1px solid ${border}`, borderRadius: 12 }}>
               <div style={{ padding: "24px 24px 0" }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--ant-color-text)", margin: "0 0 4px" }}>Project Images</h2>
-                <p style={{ fontSize: 13, color: "var(--ant-color-text-description)", margin: "0 0 24px" }}>First image becomes the cover</p>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: textMain, margin: "0 0 4px" }}>Project Images</h2>
+                <p style={{ fontSize: 13, color: textSub, margin: "0 0 24px" }}>First image becomes the cover</p>
                 <div style={{ height: 1, background: "#EEF2F7", margin: "0 -24px 24px" }} />
               </div>
               <div style={{ padding: "0 24px 24px" }}>
@@ -364,22 +378,22 @@ export default function ProjectForm() {
                     setNewFiles((prev) => prev.filter((f) => f.uid !== file.uid));
                   }}
                   fileList={newFiles}
-                  style={{ backgroundColor: "var(--ant-color-bg-layout)", borderColor: "var(--ant-color-border)", borderRadius: 12 }}
+                  style={{ backgroundColor: bgCard, borderColor: border, borderRadius: 12 }}
                 >
-                  <p className="ant-upload-drag-icon"><InboxOutlined style={{ color: "var(--ant-color-text-description)" }} /></p>
-                  <p className="ant-upload-text" style={{ color: "var(--ant-color-text)", fontWeight: 600 }}>Drag & drop images here</p>
-                  <p className="ant-upload-hint" style={{ color: "var(--ant-color-text-description)", fontSize: 13 }}>or browse files — JPG, PNG, WebP</p>
+                  <p className="ant-upload-drag-icon"><InboxOutlined style={{ color: textSub }} /></p>
+                  <p className="ant-upload-text" style={{ color: textMain, fontWeight: 600 }}>Drag & drop images here</p>
+                  <p className="ant-upload-hint" style={{ color: textSub, fontSize: 13 }}>or browse files — JPG, PNG, WebP</p>
                 </Dragger>
 
                 {/* Existing images in edit mode */}
                 {existingImgs.length > 0 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ant-color-text-description)" }}>EXISTING IMAGES</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: textSub }}>EXISTING IMAGES</span>
                     {existingImgs.map((img, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", border: "1px solid var(--ant-color-border-secondary)", borderRadius: 8 }}>
+                      <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", border: `1px solid ${border}`, borderRadius: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           <img src={getImageUrl(img)} alt="cover" style={{ width: 60, height: 40, borderRadius: 4, objectFit: "cover" }} />
-                          <span style={{ fontSize: 12, color: "var(--ant-color-text-description)" }}>{i === 0 ? "Cover" : `Image ${i + 1}`}</span>
+                          <span style={{ fontSize: 12, color: textSub }}>{i === 0 ? "Cover" : `Image ${i + 1}`}</span>
                         </div>
                         <DeleteOutlined
                           style={{ color: "var(--ant-color-error)", cursor: "pointer" }}
@@ -393,14 +407,14 @@ export default function ProjectForm() {
             </div>
 
             {/* Visibility info */}
-            <div style={{ backgroundColor: "var(--ant-color-bg-container)", border: "1px solid var(--ant-color-border-secondary)", borderRadius: 12, padding: 24 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--ant-color-text)", margin: "0 0 16px" }}>Visibility</h2>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid var(--ant-color-border-secondary)", padding: 16, borderRadius: 8 }}>
+            <div style={{ backgroundColor: bgCard, border: `1px solid ${border}`, borderRadius: 12, padding: 24 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: textMain, margin: "0 0 16px" }}>Visibility</h2>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${border}`, padding: 16, borderRadius: 8 }}>
                 <div>
-                  <span style={{ display: "block", fontWeight: 600, color: "var(--ant-color-text)", fontSize: 14 }}>
+                  <span style={{ display: "block", fontWeight: 600, color: textMain, fontSize: 14 }}>
                     {publishNow ? "Will be published" : "Will be saved as draft"}
                   </span>
-                  <span style={{ color: "var(--ant-color-text-description)", fontSize: 13 }}>
+                  <span style={{ color: textSub, fontSize: 13 }}>
                     {publishNow ? "Visible on the public website" : "Not visible to the public"}
                   </span>
                 </div>
@@ -414,7 +428,7 @@ export default function ProjectForm() {
                 >
                   <div style={{
                     position: "absolute", top: 3, left: publishNow ? 23 : 3,
-                    width: 18, height: 18, borderRadius: 999, backgroundColor: "var(--ant-color-bg-container)",
+                    width: 18, height: 18, borderRadius: 999, backgroundColor: bgCard,
                     transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
                   }} />
                 </div>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeftOutlined,
@@ -46,6 +47,13 @@ function formatDate(dateStr) {
 }
 
 export default function AdminMessageDetails() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const { id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -92,7 +100,7 @@ export default function AdminMessageDetails() {
   if (!rawData) {
     return (
       <div className="flex flex-col items-center justify-center pt-20">
-        <p className="text-slate-500 dark:text-slate-400 mb-4">Message introuvable.</p>
+        <p className=" mb-4" style={{ color: textSub }}>Message introuvable.</p>
         <Button onClick={() => navigate("/admin/messages")} icon={<ArrowLeftOutlined />}>
           Retour aux messages
         </Button>
@@ -124,7 +132,7 @@ export default function AdminMessageDetails() {
         type="link"
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate("/admin/messages")}
-        className="px-0 text-[#023B6A] font-semibold mb-4 hover:text-[#04305a]"
+        className="px-0 font-semibold mb-4" style={{ color: textMain }}
       >
         Retour aux messages
       </Button>
@@ -132,10 +140,10 @@ export default function AdminMessageDetails() {
       {/* Header Info */}
       <div className="flex justify-between items-start mb-8 flex-wrap gap-4">
         <div>
-          <h1 className="text-[24px] font-bold text-[#023B6A] m-0 mb-1">
+          <h1 className="text-[24px] font-bold m-0 mb-1" style={{ color: textMain }}>
             {contact.objet || "Sans objet"}
           </h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 m-0 mb-3">
+          <p className="text-[13px]  m-0 mb-3" style={{ color: textSub }}>
             De <strong>{contact.nom}</strong>
             {contact.entreprise && <span> — {contact.entreprise}</span>}
             {" "} — reçu le {formatDate(contact.createdAt)}
@@ -157,7 +165,7 @@ export default function AdminMessageDetails() {
               loading={marking}
               onClick={handleMarkRead}
               icon={<CheckCircleOutlined />}
-              style={{ borderRadius: 8, fontWeight: 600, color: "#059669", borderColor: "#059669" }}
+              style={{ borderRadius: 8, fontWeight: 600, color: textMain, borderColor: isDark ? "#34D399" : "#059669", backgroundColor: isDark ? "#064E3B" : "#ECFDF5" }}
             >
               Marquer comme lu
             </Button>
@@ -167,8 +175,11 @@ export default function AdminMessageDetails() {
             icon={<SendOutlined />}
             href={`mailto:${contact.email}?subject=Re: ${contact.objet || ""}`}
             style={{
-              background: "#FDE047", borderColor: "#FDE047",
-              color: "#713F12", fontWeight: 600, borderRadius: 8,
+              background: isDark ? "#854D0E" : "#FDE047", 
+              borderColor: isDark ? "#854D0E" : "#FDE047",
+              color: textMain, 
+              fontWeight: 600, 
+              borderRadius: 8,
             }}
           >
             Répondre
@@ -181,19 +192,19 @@ export default function AdminMessageDetails() {
         {/* LEFT COLUMN */}
         <div className="flex flex-col gap-6">
           <Card
-            title={<span className="text-[#023B6A] font-bold">{isConsultation ? "Description du Projet" : "Contenu du Message"}</span>}
+            title={<span className=" font-bold">{isConsultation ? "Description du Projet" : "Contenu du Message"}</span>}
             bordered={true}
-            className="rounded-xl border-slate-200 dark:border-slate-700 shadow-sm"
+            className="rounded-xl  shadow-sm" style={{ borderColor: border }}
           >
-            <p className="text-[14px] text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed m-0">
+            <p className="text-[14px]  whitespace-pre-wrap leading-relaxed m-0" style={{ color: textMain }}>
               {contact.message || "Aucun contenu fourni."}
             </p>
           </Card>
 
           <Card
-            title={<span className="text-[#023B6A] font-bold">Réponses</span>}
+            title={<span className=" font-bold">Réponses</span>}
             bordered={true}
-            className="rounded-xl border-slate-200 dark:border-slate-700 shadow-sm bg-slate-50 dark:bg-slate-800/50/50"
+            className="rounded-xl  shadow-sm " style={{ borderColor: border }} style={{ backgroundColor: isDark ? "#0F172A" : "#F8FAFC" }}
           >
             <p className="text-[13px] text-slate-400 italic m-0">
               Aucune réponse envoyée depuis l'administration pour l'instant.
@@ -203,7 +214,7 @@ export default function AdminMessageDetails() {
               icon={<SendOutlined />}
               href={`mailto:${contact.email}?subject=Re: ${contact.objet || ""}`}
               style={{
-                backgroundColor: "var(--ant-color-primary)", borderColor: "#023B6A",
+                backgroundColor: "var(--ant-color-primary)", borderColor: primary,
                 marginTop: 16, fontWeight: 600, borderRadius: 8,
               }}
             >
@@ -215,9 +226,9 @@ export default function AdminMessageDetails() {
         {/* RIGHT COLUMN */}
         <div className="flex flex-col gap-6">
           <Card
-            title={<span className="text-[#023B6A] font-bold">Informations du Contact</span>}
+            title={<span className=" font-bold">Informations du Contact</span>}
             bordered={true}
-            className="rounded-xl border-slate-200 dark:border-slate-700 shadow-sm"
+            className="rounded-xl  shadow-sm" style={{ borderColor: border }}
             styles={{ body: { padding: 0 } }}
           >
             <div className="flex flex-col items-center gap-2 pt-6 pb-4">
@@ -230,7 +241,7 @@ export default function AdminMessageDetails() {
               >
                 {initials}
               </Avatar>
-              <h3 className="text-[16px] font-bold text-slate-800 dark:text-slate-100 m-0 mt-2">
+              <h3 className="text-[16px] font-bold  m-0 mt-2" style={{ color: textMain }}>
                 {contact.nom}
               </h3>
               {contact.entreprise && (
@@ -244,13 +255,13 @@ export default function AdminMessageDetails() {
               column={1}
               bordered
               size="small"
-              labelStyle={{ fontWeight: 600, color: "#023B6A", fontSize: 13, width: 120 }}
+              labelStyle={{ fontWeight: 600, color: primary, fontSize: 13, width: 120 }}
               contentStyle={{ fontSize: 13 }}
             >
               <Descriptions.Item label={<span><MailOutlined /> Email</span>}>
                 <a
                   href={`mailto:${contact.email}`}
-                  className="text-[#023B6A] hover:underline flex items-center gap-1.5 break-all"
+                  className=" hover:underline flex items-center gap-1.5 break-all"
                 >
                   {contact.email}
                 </a>
@@ -290,7 +301,7 @@ export default function AdminMessageDetails() {
             type="info"
             showIcon
             icon={<InfoCircleOutlined />}
-            className="rounded-xl border-indigo-100 bg-indigo-50 text-indigo-800"
+            className="rounded-xl " style={{ backgroundColor: isDark ? "#1E1B4B" : "#EEF2FF", borderColor: isDark ? "#3730A3" : "#E0E7FF", color: isDark ? "#C7D2FE" : "#3730A3" }}
           />
         </div>
       </div>

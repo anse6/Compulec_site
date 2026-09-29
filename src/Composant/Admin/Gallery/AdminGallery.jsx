@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import {
   Modal,
   Form,
@@ -11,7 +13,12 @@ import {
   Popconfirm,
   Empty,
 } from "antd";
-import { InboxOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  InboxOutlined,
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 
 // Icons are now imported from @ant-design/icons
 
@@ -32,6 +39,13 @@ function getImageUrl(img) {
 }
 
 export default function AdminGallery() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // 'add' or 'edit'
   const [editingGalleryId, setEditingGalleryId] = useState(null);
@@ -61,9 +75,10 @@ export default function AdminGallery() {
     if (searchText) {
       result = result.filter(
         (g) =>
-          (g.titre && g.titre.toLowerCase().includes(searchText.toLowerCase())) ||
+          (g.titre &&
+            g.titre.toLowerCase().includes(searchText.toLowerCase())) ||
           (g.projetTitre &&
-            g.projetTitre.toLowerCase().includes(searchText.toLowerCase()))
+            g.projetTitre.toLowerCase().includes(searchText.toLowerCase())),
       );
     }
     return result;
@@ -83,18 +98,18 @@ export default function AdminGallery() {
     setUploadedFiles([]);
     if (mode === "edit" && item) {
       setEditingGalleryId(item.id);
-      form.setFieldsValue({ 
+      form.setFieldsValue({
         title: item.titre,
-        projetId: item.projetId
+        projetId: item.projetId,
       });
-      
+
       const existingFiles = (item.images || []).map((img, index) => ({
         id: `existing-${index}`,
         name: `Image ${index + 1}`,
         url: getImageUrl(img),
         type: "image/jpeg", // Fallback type for preview
         isExisting: true,
-        backendPath: img // Store the original path
+        backendPath: img, // Store the original path
       }));
       setUploadedFiles(existingFiles);
     } else {
@@ -190,6 +205,21 @@ export default function AdminGallery() {
     }
   };
 
+  const gridActionBtnStyle = {
+    backgroundColor: bgCard,
+    border: `1px solid ${border}`,
+    borderRadius: 6,
+    padding: "6px 12px",
+    fontSize: 13,
+    fontWeight: 600,
+    color: textSub,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    transition: "all 0.2s",
+  };
+
   return (
     <div
       style={{
@@ -213,14 +243,14 @@ export default function AdminGallery() {
             style={{
               fontWeight: 800,
               fontSize: 26,
-              color: "var(--ant-color-text)",
+              color: textMain,
               margin: "0 0 6px",
               letterSpacing: "-0.3px",
             }}
           >
             Gallery
           </h1>
-          <p style={{ fontSize: 13, color: "var(--ant-color-text-description)", margin: 0 }}>
+          <p style={{ fontSize: 13, color: textSub, margin: 0 }}>
             Manage general images used across the COMPULEC website.
           </p>
         </div>
@@ -230,7 +260,7 @@ export default function AdminGallery() {
             padding: "10px 22px",
             border: "none",
             borderRadius: 10,
-            backgroundColor: "#023B6A",
+            backgroundColor: typeof primary !== "undefined" ? primary : "var(--ant-color-primary, #023B6A)",
             color: "#ffffff",
             fontWeight: 700,
             fontSize: 13,
@@ -250,7 +280,15 @@ export default function AdminGallery() {
       </div>
 
       {/* Search and Filter Toolbar */}
-      <div style={{ display: "flex", gap: 16, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          marginBottom: 16,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
         <div style={{ position: "relative", width: 320 }}>
           <Input.Search
             placeholder="Rechercher par titre ou projet..."
@@ -269,7 +307,7 @@ export default function AdminGallery() {
           loading={loadingProjets}
           value={selectedProjetId}
           onChange={(value) => setSelectedProjetId(value)}
-          options={projets.map(p => ({ value: p.id, label: p.titre }))}
+          options={projets.map((p) => ({ value: p.id, label: p.titre }))}
         />
       </div>
 
@@ -278,16 +316,16 @@ export default function AdminGallery() {
         {filteredGalleries.length === 0 ? (
           <div
             style={{
-              backgroundColor: "var(--ant-color-bg-container)",
+              backgroundColor: bgCard,
               padding: 60,
               borderRadius: 12,
-              border: "1px solid var(--ant-color-border-secondary)",
+              border: `1px solid ${border}`,
               marginTop: 20,
             }}
           >
             <Empty
               description={
-                <span style={{ color: "var(--ant-color-text-description)" }}>Aucune galerie trouvée</span>
+                <span style={{ color: textSub }}>Aucune galerie trouvée</span>
               }
             />
           </div>
@@ -308,8 +346,8 @@ export default function AdminGallery() {
                 <div
                   key={item.id}
                   style={{
-                    backgroundColor: "var(--ant-color-bg-container)",
-                    border: "1px solid var(--ant-color-border-secondary)",
+                    backgroundColor: bgCard,
+                    border: `1px solid ${border}`,
                     borderRadius: 12,
                     overflow: "hidden",
                     display: "flex",
@@ -357,7 +395,7 @@ export default function AdminGallery() {
                       style={{
                         fontSize: 15,
                         fontWeight: 700,
-                        color: "#023B6A",
+                        color: primary,
                         margin: "0 0 4px",
                       }}
                     >
@@ -366,7 +404,7 @@ export default function AdminGallery() {
                     <p
                       style={{
                         fontSize: 12,
-                        color: "var(--ant-color-text-description)",
+                        color: textSub,
                         margin: "0 0 16px",
                       }}
                     >
@@ -406,7 +444,7 @@ export default function AdminGallery() {
                             border: "none",
                             cursor: "pointer",
                             padding: 4,
-                            color: "var(--ant-color-error)"
+                            color: "var(--ant-color-error)",
                           }}
                         >
                           <DeleteOutlined style={{ fontSize: 16 }} />
@@ -424,12 +462,12 @@ export default function AdminGallery() {
       {/* Add / Edit Modal */}
       <Modal
         title={
-          <div style={{ fontWeight: 800, color: "#023B6A", fontSize: 18 }}>
+          <div style={{ fontWeight: 800, color: primary, fontSize: 18 }}>
             {modalMode === "edit" ? "Edit Image/Video" : "Add Images/Videos"}
             <p
               style={{
                 fontWeight: 400,
-                color: "var(--ant-color-text-description)",
+                color: textSub,
                 fontSize: 13,
                 margin: "4px 0 0",
               }}
@@ -443,12 +481,15 @@ export default function AdminGallery() {
         footer={null}
         width={600}
         closeIcon={
-          <span style={{ color: "#023B6A", fontSize: 18, fontWeight: "bold" }}>
+          <span style={{ color: primary, fontSize: 18, fontWeight: "bold" }}>
             ✕
           </span>
         }
         styles={{
-          header: { padding: "24px", borderBottom: "1px solid var(--ant-color-border-secondary)" },
+          header: {
+            padding: "24px",
+            borderBottom: "1px solid var(--ant-color-border-secondary)",
+          },
           body: { padding: "24px" },
           content: { borderRadius: 12, overflow: "hidden", padding: 0 },
         }}
@@ -457,7 +498,7 @@ export default function AdminGallery() {
           <Form.Item
             name="projetId"
             label={
-              <span style={{ fontWeight: 600, color: "#023B6A" }}>
+              <span style={{ fontWeight: 600, color: primary }}>
                 Projet Associé *
               </span>
             }
@@ -486,7 +527,7 @@ export default function AdminGallery() {
           <Form.Item
             name="title"
             label={
-              <span style={{ fontWeight: 600, color: "#023B6A" }}>
+              <span style={{ fontWeight: 600, color: primary }}>
                 Titre de la Galerie
               </span>
             }
@@ -494,7 +535,7 @@ export default function AdminGallery() {
             <Input
               size="large"
               placeholder="e.g. Installation des caméras"
-              style={{ borderRadius: 8, borderColor: "var(--ant-color-border)" }}
+              style={{ borderRadius: 8, borderColor: border }}
             />
           </Form.Item>
 
@@ -505,24 +546,24 @@ export default function AdminGallery() {
               showUploadList={false}
               beforeUpload={handleBeforeUpload}
               style={{
-                backgroundColor: "var(--ant-color-bg-container)",
-                borderColor: "var(--ant-color-border)",
+                backgroundColor: bgCard,
+                borderColor: border,
                 borderRadius: 12,
                 padding: "40px 0",
               }}
             >
               <p className="ant-upload-drag-icon">
-                <InboxOutlined style={{ color: "#023B6A", fontSize: 32 }} />
+                <InboxOutlined style={{ color: primary, fontSize: 32 }} />
               </p>
               <p
                 className="ant-upload-text"
-                style={{ color: "#023B6A", fontWeight: 700, fontSize: 16 }}
+                style={{ color: primary, fontWeight: 700, fontSize: 16 }}
               >
                 Drag & drop images/video here
               </p>
               <p
                 className="ant-upload-hint"
-                style={{ color: "var(--ant-color-text-description)", fontSize: 13 }}
+                style={{ color: textSub, fontSize: 13 }}
               >
                 or browse files - JPG, PNG, WebP, MP4
               </p>
@@ -546,7 +587,7 @@ export default function AdminGallery() {
                     width: 80,
                     height: 80,
                     borderRadius: 12,
-                    border: "1px solid var(--ant-color-border)",
+                    border: `1px solid ${border}`,
                     overflow: "hidden",
                   }}
                 >
@@ -612,8 +653,8 @@ export default function AdminGallery() {
               style={{
                 borderRadius: 8,
                 fontWeight: 600,
-                color: "#023B6A",
-                borderColor: "var(--ant-color-border)",
+                color: primary,
+                borderColor: border,
               }}
             >
               Cancel
@@ -789,33 +830,3 @@ export default function AdminGallery() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
-const gridActionBtnStyle = {
-  backgroundColor: "var(--ant-color-bg-container)",
-  border: "1px solid var(--ant-color-border)",
-  borderRadius: 6,
-  padding: "6px 12px",
-  fontSize: 13,
-  fontWeight: 600,
-  color: "var(--ant-color-text-description)",
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  transition: "border-color 0.2s, color 0.2s",
-};
-
-const previewBoxStyle = {
-  width: 80,
-  height: 80,
-  border: "1px solid var(--ant-color-border)",
-  borderRadius: 12,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "var(--ant-color-text-description)",
-  fontSize: 12,
-  fontWeight: 500,
-  gap: 4,
-};

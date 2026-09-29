@@ -1,4 +1,5 @@
 import React from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import {
   Tabs,
   Form,
@@ -27,34 +28,56 @@ import AvatarWithPopover from "../Users/AvatarWithPopover";
 
 // ── Helper
 
-const SectionHeader = ({ title, subtitle }) => (
-  <div style={{ marginBottom: 28 }}>
-    <h2
-      style={{
-        fontWeight: 700,
-        fontSize: 18,
-        color: "#023B6A",
-        margin: "0 0 4px",
-      }}
-    >
-      {title}
-    </h2>
-    <p
-      style={{
-        fontSize: 13,
-        color: "var(--ant-color-text-description)",
-        margin: 0,
-      }}
-    >
-      {subtitle}
-    </p>
-    <div style={{ height: 1, background: "#F1F5F9", marginTop: 16 }} />
-  </div>
-);
+const SectionHeader = ({ title, subtitle }) => {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <h2
+        style={{
+          fontWeight: 700,
+          fontSize: 18,
+          color: primary,
+          margin: "0 0 4px",
+        }}
+      >
+        {title}
+      </h2>
+      <p
+        style={{
+          fontSize: 13,
+          color: textSub,
+          margin: 0,
+        }}
+      >
+        {subtitle}
+      </p>
+      <div
+        style={{
+          height: 1,
+          background: isDark ? "#334155" : "#F1F5F9",
+          marginTop: 16,
+        }}
+      />
+    </div>
+  );
+};
 
 //  Tab: Profile
 
 function ProfileTab({ user, loading }) {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [form] = Form.useForm();
   const fullName = user ? `${user.prenom || ""} ${user.nom || ""}`.trim() : "—";
   const email = user?.email || "";
@@ -77,9 +100,9 @@ function ProfileTab({ user, loading }) {
           alignItems: "center",
           gap: 24,
           padding: "20px 24px",
-          backgroundColor: "#ffffff",
+          backgroundColor: bgCard,
           borderRadius: 16,
-          border: "1px solid var(--ant-color-border-secondary)",
+          border: `1px solid ${border}`,
         }}
       >
         <AvatarWithPopover name={fullName} email={email} size={72} />
@@ -88,7 +111,7 @@ function ProfileTab({ user, loading }) {
             style={{
               fontSize: 20,
               fontWeight: 700,
-              color: "var(--ant-color-text)",
+              color: textMain,
               marginBottom: 6,
             }}
           >
@@ -131,12 +154,12 @@ function ProfileTab({ user, loading }) {
           size="middle"
           labelStyle={{
             fontWeight: 600,
-            color: "var(--ant-color-text-description)",
+            color: textSub,
             fontSize: 13,
             width: 130,
-            background: "#FAFAFA",
+            background: isDark ? "#0F172A" : "#FAFAFA",
           }}
-          contentStyle={{ fontSize: 13, color: "#023B6A", fontWeight: 600 }}
+          contentStyle={{ fontSize: 13, color: primary, fontWeight: 600 }}
         >
           <Descriptions.Item label="First Name">
             {user?.prenom || "—"}
@@ -171,9 +194,16 @@ function ProfileTab({ user, loading }) {
   );
 }
 
-// ── Tab: Security (Change Password) ──────────────────────────────────────────
+//  Tab: Security (Change Password)
 
 function SecurityTab() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [form] = Form.useForm();
   const [changePassword, { isLoading }] = useChangePasswordMutation();
 
@@ -214,8 +244,8 @@ function SecurityTab() {
 
       <div
         style={{
-          backgroundColor: "#F8FAFC",
-          border: "1px solid #E2E8F0",
+          backgroundColor: isDark ? "#0F172A" : "#F8FAFC",
+          border: `1px solid ${border}`,
           borderRadius: 16,
           padding: "28px 32px",
         }}
@@ -232,21 +262,21 @@ function SecurityTab() {
             style={{
               width: 40,
               height: 40,
-              background: "#EFF6FF",
+              background: isDark ? "rgba(56, 189, 248, 0.1)" : "#EFF6FF",
               borderRadius: 10,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <KeyOutlined style={{ color: "#023B6A", fontSize: 18 }} />
+            <KeyOutlined style={{ color: primary, fontSize: 18 }} />
           </div>
           <div>
             <div
               style={{
                 fontWeight: 700,
                 fontSize: 15,
-                color: "var(--ant-color-text)",
+                color: textMain,
               }}
             >
               Password Update
@@ -254,7 +284,7 @@ function SecurityTab() {
             <div
               style={{
                 fontSize: 12,
-                color: "var(--ant-color-text-description)",
+                color: textSub,
               }}
             >
               Minimum 8 characters required.
@@ -271,7 +301,7 @@ function SecurityTab() {
           <Form.Item
             name="ancienMotDePasse"
             label={
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#023B6A" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
                 Current Password
               </span>
             }
@@ -284,11 +314,7 @@ function SecurityTab() {
           >
             <Input.Password
               size="large"
-              prefix={
-                <LockOutlined
-                  style={{ color: "var(--ant-color-text-description)" }}
-                />
-              }
+              prefix={<LockOutlined style={{ color: textSub }} />}
               placeholder="Enter current password"
               style={{ borderRadius: 10 }}
             />
@@ -297,7 +323,7 @@ function SecurityTab() {
           <Form.Item
             name="nouveauMotDePasse"
             label={
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#023B6A" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
                 New Password
               </span>
             }
@@ -314,11 +340,7 @@ function SecurityTab() {
           >
             <Input.Password
               size="large"
-              prefix={
-                <LockOutlined
-                  style={{ color: "var(--ant-color-text-description)" }}
-                />
-              }
+              prefix={<LockOutlined style={{ color: textSub }} />}
               placeholder="Enter new password"
               style={{ borderRadius: 10 }}
             />
@@ -327,7 +349,7 @@ function SecurityTab() {
           <Form.Item
             name="confirmNouveauMotDePasse"
             label={
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#023B6A" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
                 Confirm New Password
               </span>
             }
@@ -340,11 +362,7 @@ function SecurityTab() {
           >
             <Input.Password
               size="large"
-              prefix={
-                <LockOutlined
-                  style={{ color: "var(--ant-color-text-description)" }}
-                />
-              }
+              prefix={<LockOutlined style={{ color: textSub }} />}
               placeholder="Confirm new password"
               style={{ borderRadius: 10 }}
             />
@@ -359,7 +377,7 @@ function SecurityTab() {
               padding: "10px 22px",
               border: "none",
               borderRadius: 10,
-              backgroundColor: "#023B6A",
+              backgroundColor: primary,
               color: "#ffffff",
               fontWeight: 700,
               fontSize: 13,
@@ -382,6 +400,13 @@ function SecurityTab() {
 //  Tab: Notifications
 
 function NotificationsTab() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const items = [
     {
       key: "msg",
@@ -424,8 +449,8 @@ function NotificationsTab() {
               justifyContent: "space-between",
               alignItems: "center",
               padding: "16px 20px",
-              backgroundColor: "#F8FAFC",
-              border: "1px solid #E2E8F0",
+              backgroundColor: isDark ? "#0F172A" : "#F8FAFC",
+              border: `1px solid ${border}`,
               borderRadius: 12,
             }}
           >
@@ -434,7 +459,7 @@ function NotificationsTab() {
                 style={{
                   fontWeight: 700,
                   fontSize: 14,
-                  color: "var(--ant-color-text)",
+                  color: textMain,
                   marginBottom: 2,
                 }}
               >
@@ -443,7 +468,7 @@ function NotificationsTab() {
               <div
                 style={{
                   fontSize: 12,
-                  color: "var(--ant-color-text-description)",
+                  color: textSub,
                 }}
               >
                 {item.desc}
@@ -460,9 +485,16 @@ function NotificationsTab() {
   );
 }
 
-// ── Tab: General ──────────────────────────────────────────────────────────────
+//  Tab: General
 
 function GeneralTab() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   return (
     <div
       style={{
@@ -497,7 +529,7 @@ function GeneralTab() {
           <Form.Item
             name="companyName"
             label={
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#023B6A" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
                 Company Name
               </span>
             }
@@ -507,7 +539,7 @@ function GeneralTab() {
           <Form.Item
             name="supportEmail"
             label={
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#023B6A" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
                 Support Email
               </span>
             }
@@ -518,7 +550,7 @@ function GeneralTab() {
         <Form.Item
           name="address"
           label={
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#023B6A" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
               Physical Address
             </span>
           }
@@ -527,9 +559,9 @@ function GeneralTab() {
         </Form.Item>
       </Form>
 
-      <div style={{ height: 1, background: "#F1F5F9" }} />
+      <div style={{ height: 1, background: isDark ? "#334155" : "#F1F5F9" }} />
 
-      <div
+      {/* <div
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -557,14 +589,21 @@ function GeneralTab() {
           </div>
         </div>
         <Switch style={{ flexShrink: 0, marginLeft: 16 }} />
-      </div>
+      </div> */}
     </div>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+//  Main Component
 
 export default function AdminSettings() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const { data: userData, isLoading } = useGetCurrentUserQuery();
   const user = userData?.data ?? null;
 
@@ -643,7 +682,7 @@ export default function AdminSettings() {
           style={{
             fontSize: 26,
             fontWeight: 800,
-            color: "#023B6A",
+            color: primary,
             margin: "0 0 4px",
           }}
         >
@@ -652,7 +691,7 @@ export default function AdminSettings() {
         <p
           style={{
             fontSize: 13,
-            color: "var(--ant-color-text-description)",
+            color: textSub,
             margin: 0,
           }}
         >
@@ -663,8 +702,8 @@ export default function AdminSettings() {
       {/* Tabs */}
       <div
         style={{
-          backgroundColor: "#ffffff",
-          border: "1px solid #E2E8F0",
+          backgroundColor: bgCard,
+          border: `1px solid ${border}`,
           borderRadius: 16,
           overflow: "hidden",
           boxShadow: "0 1px 4px rgba(0,0,0,0.04)",

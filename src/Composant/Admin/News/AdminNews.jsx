@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useAdminTheme } from "../AdminThemeContext";
 import {
   Table,
   ConfigProvider,
@@ -79,7 +80,7 @@ export function VisibilityToggle({ articleId, publie }) {
         <div style={{ marginTop: 8 }}>
           <p
             style={{
-              color: "var(--ant-color-text-description)",
+              color: textSub,
               margin: "0 0 12px",
             }}
           >
@@ -202,6 +203,13 @@ function DeleteButton({ articleId }) {
 
 // ── ArticleActionCell — composant proper pour éviter hooks dans render ────────
 function ArticleActionCell({ record, navigate }) {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [publier, { isLoading: publishing }] = usePublierArticleMutation();
   const [depublier, { isLoading: unpublishing }] =
     useDepublierArticleMutation();
@@ -240,7 +248,7 @@ function ArticleActionCell({ record, navigate }) {
           backgroundColor: "#F8FAFC",
           padding: "4px 10px",
           borderRadius: 8,
-          border: "1px solid #E2E8F0",
+          border: `1px solid ${border}`,
         }}
       >
         <span
@@ -265,14 +273,14 @@ function ArticleActionCell({ record, navigate }) {
         type="text"
         icon={<EyeOutlined />}
         onClick={() => navigate(`/admin/news/preview/${record.id}`)}
-        style={{ color: "var(--ant-color-text-description)" }}
+        style={{ color: textSub }}
         title="Voir"
       />
       <Button
         type="text"
         icon={<EditOutlined />}
         onClick={() => navigate(`/admin/news/edit/${record.id}`)}
-        style={{ color: "var(--ant-color-text-description)" }}
+        style={{ color: textSub }}
         title="Modifier"
       />
       <DeleteButton articleId={record.id} />
@@ -282,6 +290,13 @@ function ArticleActionCell({ record, navigate }) {
 
 //  Main Component
 export default function AdminNews() {
+  const isDark = useAdminTheme();
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState("All");
@@ -338,7 +353,7 @@ export default function AdminNews() {
             height: 48,
             borderRadius: 8,
             objectFit: "cover",
-            border: "1px solid #E2E8F0",
+            border: `1px solid ${border}`,
           }}
         />
       ),
@@ -351,7 +366,7 @@ export default function AdminNews() {
         <div
           style={{
             fontWeight: 700,
-            color: "var(--ant-color-text)",
+            color: textMain,
             fontSize: 13,
             minWidth: 120,
           }}
@@ -368,7 +383,7 @@ export default function AdminNews() {
         <div
           style={{
             fontSize: 12,
-            color: "var(--ant-color-text-description)",
+            color: textSub,
             minWidth: 120,
           }}
         >
@@ -384,7 +399,7 @@ export default function AdminNews() {
         <div
           style={{
             fontSize: 12,
-            color: "var(--ant-color-text-description)",
+            color: textSub,
             minWidth: 120,
           }}
         >
@@ -400,7 +415,7 @@ export default function AdminNews() {
         <div
           style={{
             fontSize: 12,
-            color: "var(--ant-color-text-description)",
+            color: textSub,
             maxWidth: 200,
             whiteSpace: "nowrap",
             overflow: "hidden",
@@ -418,7 +433,7 @@ export default function AdminNews() {
       render: (t) => (
         <span
           style={{
-            color: "var(--ant-color-text-secondary)",
+            color: textSub,
             fontWeight: 500,
             fontSize: 12,
             whiteSpace: "nowrap",
@@ -462,7 +477,7 @@ export default function AdminNews() {
             style={{
               fontSize: 26,
               fontWeight: 800,
-              color: "var(--ant-color-text)",
+              color: textMain,
               margin: "0 0 4px",
             }}
           >
@@ -471,7 +486,7 @@ export default function AdminNews() {
           <p
             style={{
               fontSize: 13,
-              color: "var(--ant-color-text-description)",
+              color: textSub,
               margin: 0,
             }}
           >
@@ -494,7 +509,7 @@ export default function AdminNews() {
             padding: "10px 22px",
             border: "none",
             borderRadius: 10,
-            backgroundColor: "#023B6A",
+            backgroundColor: primary,
             color: "#ffffff",
             fontWeight: 700,
             fontSize: 13,
@@ -516,8 +531,8 @@ export default function AdminNews() {
       {/*  Barre de filtres  */}
       <div
         style={{
-          backgroundColor: "#ffffff",
-          border: "1px solid #E2E8F0",
+          backgroundColor: bgCard,
+          border: `1px solid ${border}`,
           borderRadius: 14,
           padding: "16px 20px",
           display: "flex",
@@ -574,7 +589,7 @@ export default function AdminNews() {
             icon={view === "list" ? <AppstoreOutlined /> : <BarsOutlined />}
             onClick={() => setView(view === "list" ? "grid" : "list")}
             style={{
-              color: "var(--ant-color-text-description)",
+              color: textSub,
               borderRadius: 8,
             }}
             title={view === "list" ? "Vue grille" : "Vue liste"}
@@ -584,9 +599,7 @@ export default function AdminNews() {
 
       {/* ── Résultat filtre ─────────────────────────────────────────────── */}
       {hasActiveFilters && (
-        <div
-          style={{ fontSize: 12, color: "var(--ant-color-text-description)" }}
-        >
+        <div style={{ fontSize: 12, color: textSub }}>
           <FilterOutlined style={{ marginRight: 4 }} />
           {filtered.length} résultat{filtered.length > 1 ? "s" : ""} sur{" "}
           {articles.length} articles
@@ -615,8 +628,8 @@ export default function AdminNews() {
       {!isError && (
         <div
           style={{
-            backgroundColor: "#ffffff",
-            border: "1px solid #E2E8F0",
+            backgroundColor: bgCard,
+            border: `1px solid ${border}`,
             borderRadius: 16,
             overflow: "hidden",
             boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
@@ -635,7 +648,7 @@ export default function AdminNews() {
                 emptyText: <Empty description="Aucun article trouvé" />,
               }}
               pagination={{
-                position: ["bottomRight"],
+                placement: ["bottomRight"],
                 pageSize: 10,
                 showSizeChanger: false,
                 showTotal: (t) => `${t} article${t > 1 ? "s" : ""}`,
@@ -691,7 +704,7 @@ export default function AdminNews() {
                   bodyStyle={{ padding: "16px 20px" }}
                   style={{
                     borderRadius: 12,
-                    border: "1px solid #E2E8F0",
+                    border: `1px solid ${border}`,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
                   }}
                   actions={[
@@ -714,7 +727,7 @@ export default function AdminNews() {
                     title={
                       <span
                         style={{
-                          color: "var(--ant-color-text)",
+                          color: textMain,
                           fontWeight: 700,
                           fontSize: 15,
                         }}
@@ -726,7 +739,7 @@ export default function AdminNews() {
                       <div>
                         <div
                           style={{
-                            color: "var(--ant-color-text-description)",
+                            color: textSub,
                             fontSize: 13,
                             marginBottom: 8,
                             whiteSpace: "nowrap",
@@ -739,7 +752,7 @@ export default function AdminNews() {
                         <div
                           style={{
                             fontSize: 11,
-                            color: "var(--ant-color-text-description)",
+                            color: textSub,
                           }}
                         >
                           {formatDate(item.createdAt)}
