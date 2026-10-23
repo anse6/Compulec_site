@@ -4,6 +4,7 @@ import { Modal, Form, Input, Button, Avatar, Tag, Divider, DatePicker, Select } 
 import { EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useUpdateUserMutation } from '../../../services/api/usersApi';
+import { useTranslation } from "react-i18next";
 import { message as antMessage } from 'antd';
 
 const { Option } = Select;
@@ -21,6 +22,7 @@ function getInitials(name = '') {
 
 export default function EditUserModal({ isOpen, onClose, user }) {
   const isDark = useAdminTheme();
+  const { t } = useTranslation();
   const bgCard = isDark ? "#1E293B" : "#ffffff";
   const border = isDark ? "#334155" : "#E2E8F0";
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
@@ -78,10 +80,10 @@ export default function EditUserModal({ isOpen, onClose, user }) {
             {initials}
           </Avatar>
           <div>
-            <p className="text-[18px] font-bold  m-0 leading-tight" style={{ color: primary }}>Edit User</p>
+            <p className="text-[18px] font-bold  m-0 leading-tight" style={{ color: primary }}>{t('admin.users.editDesc')}</p>
             {fullName && (
               <p className="text-[12px] text-slate-400 m-0">
-                Editing <span className="font-semibold text-slate-500">{fullName}</span>
+                <span className="font-semibold text-slate-500">{fullName}</span>
               </p>
             )}
           </div>
@@ -92,7 +94,7 @@ export default function EditUserModal({ isOpen, onClose, user }) {
       <Form form={form} layout="vertical" onFinish={handleFinish} requiredMark={false} className="pt-4">
 
         {/* Email (lecture seule) */}
-        <Form.Item label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Email Address</span>}>
+        <Form.Item label={<span className="text-[13px] font-semibold " style={{ color: primary }}>{t('admin.messages.email')}</span>}>
           <Input
             value={user?.email || ''}
             disabled
@@ -104,55 +106,55 @@ export default function EditUserModal({ isOpen, onClose, user }) {
 
         <div className="flex gap-4">
           <Form.Item
-            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Prénom</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>{t('admin.users.firstName')}</span>}
             name="prenom" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
-            <Input size="large" placeholder="Prénom" className="rounded-lg" />
+            <Input size="large" className="rounded-lg" />
           </Form.Item>
           <Form.Item
-            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Nom</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>{t('admin.users.lastName')}</span>}
             name="nom" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
-            <Input size="large" placeholder="Nom" className="rounded-lg" />
+            <Input size="large" className="rounded-lg" />
           </Form.Item>
         </div>
 
         <div className="flex gap-4">
           <Form.Item
-            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Téléphone</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>{t('admin.users.phone')}</span>}
             name="phone"
             rules={[{ required: true, message: 'Requis' }, { pattern: /^[0-9]{9}$/, message: '9 chiffres requis' }]}
             className="flex-1"
           >
-            <Input size="large" placeholder="690000000" className="rounded-lg" />
+            <Input size="large" className="rounded-lg" />
           </Form.Item>
           <Form.Item
-            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Sexe</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>{t('admin.users.gender')}</span>}
             name="sexe" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
-            <Select size="large" placeholder="Sélectionner" className="rounded-lg">
-              <Option value="HOMME">Homme</Option>
-              <Option value="FEMME">Femme</Option>
+            <Select size="large" className="rounded-lg">
+              <Option value="HOMME">{t('admin.users.male')}</Option>
+              <Option value="FEMME">{t('admin.users.female')}</Option>
             </Select>
           </Form.Item>
         </div>
 
         <div className="flex gap-4">
           <Form.Item
-            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Fonction</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>{t('admin.users.role')}</span>}
             name="fonction" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
-            <Input size="large" placeholder="Ex: Responsable IT" className="rounded-lg" />
+            <Input size="large" className="rounded-lg" />
           </Form.Item>
           <Form.Item
-            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Date de naissance</span>}
+            label={<span className="text-[13px] font-semibold " style={{ color: primary }}>{t('admin.messages.date')}</span>}
             name="dateNaissance" rules={[{ required: true, message: 'Requis' }]} className="flex-1"
           >
             <DatePicker size="large" className="w-full rounded-lg" format="DD/MM/YYYY" />
           </Form.Item>
         </div>
 
-        <Form.Item label={<span className="text-[13px] font-semibold " style={{ color: primary }}>Rôle</span>}>
+        <Form.Item label={<span className="text-[13px] font-semibold " style={{ color: primary }}>{t('admin.users.role')}</span>}>
           <div className="flex items-center h-[42px] px-3 bg-[#EEF2FF] border border-[#E0E7FF] rounded-lg gap-2">
             <Tag color="blue" style={{ margin: 0 }}>{user?.role || 'Manager'}</Tag>
             <span className="text-[11px] text-slate-400 ml-auto">Modifiable via "Change Role"</span>
@@ -162,10 +164,10 @@ export default function EditUserModal({ isOpen, onClose, user }) {
         <Divider className="my-4" />
 
         <div className="flex justify-end gap-3">
-          <Button size="large" onClick={onClose} className="rounded-lg px-6">Annuler</Button>
+          <Button size="large" onClick={onClose} className="rounded-lg px-6">{t('admin.users.cancel')}</Button>
           <Button size="large" type="primary" htmlType="submit" icon={<EditOutlined />} loading={isLoading}
             style={{ background: primary, borderColor: primary }} className="rounded-lg px-6">
-            Save Changes
+            {t('admin.users.save')}
           </Button>
         </div>
       </Form>

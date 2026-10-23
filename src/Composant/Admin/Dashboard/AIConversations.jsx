@@ -1,69 +1,207 @@
-import React from 'react';
-import { Tag, Button, Skeleton } from 'antd';
-import { EyeOutlined, UserSwitchOutlined, SearchOutlined, CheckCircleOutlined, WarningOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { useAdminTheme } from '../AdminThemeContext';
-import { useGetDashboardAiSessionsQuery } from '../../../services/api/dashboardApi';
+import React from "react";
+import { Tag, Button, Skeleton, Table } from "antd";
+import { useTranslation } from "react-i18next";
+import {
+  EyeOutlined,
+  UserSwitchOutlined,
+  SearchOutlined,
+  CheckCircleOutlined,
+  WarningOutlined,
+} from "@ant-design/icons";
+import { Link, useNavigate } from "react-router-dom";
+import { useAdminTheme } from "../AdminThemeContext";
+import WidgetError from "./WidgetError";
+import { formatDashboardDate } from "./dashboardFormat";
+import {
+  useGetDashboardAiSessionsQuery,
+  DASHBOARD_QUERY_OPTIONS,
+} from "../../../services/api/dashboardApi";
+import useMediaQuery from "../../../hooks/useMediaQuery";
 
+// Statuts de ChatSessionStatus (backend) ; libellés : admin.dashboard.chatStatus.<STATUT>
 const TRANSFER_STATUS_CONFIG = {
-  'WAITING_ADMIN': { color: 'gold',    label: 'Waiting',    icon: <UserSwitchOutlined /> },
-  'WITH_ADMIN':    { color: 'blue',    label: 'With Admin', icon: <SearchOutlined /> },
-  'ACTIVE':        { color: 'green',   label: 'Active',     icon: <CheckCircleOutlined /> },
-  'CLOSED':        { color: 'default', label: 'Closed',     icon: <CheckCircleOutlined /> },
-  'IN_REVIEW':     { color: 'blue',    label: 'In Review',  icon: <SearchOutlined /> },
+  WAITING_ADMIN: { color: "gold", icon: <UserSwitchOutlined /> },
+  WITH_ADMIN: { color: "blue", icon: <SearchOutlined /> },
+  ACTIVE: { color: "green", icon: <CheckCircleOutlined /> },
+  CLOSED: { color: "default", icon: <CheckCircleOutlined /> },
 };
 
 function TransferStatusTag({ status }) {
-  const cfg = TRANSFER_STATUS_CONFIG[status] || { color: 'default', label: status, icon: <WarningOutlined /> };
+  const { t } = useTranslation();
+  const cfg = TRANSFER_STATUS_CONFIG[status] || {
+    color: "default",
+    icon: <WarningOutlined />,
+  };
   return (
-    <Tag icon={cfg.icon} color={cfg.color} style={{ borderRadius: 999, padding: '2px 10px', fontWeight: 600, margin: 0, fontSize: 11 }}>
-      {cfg.label}
+    <Tag
+      icon={cfg.icon}
+      color={cfg.color}
+      style={{
+        borderRadius: 999,
+        padding: "2px 10px",
+        fontWeight: 600,
+        margin: 0,
+        fontSize: 11,
+      }}
+    >
+      {t(`admin.dashboard.chatStatus.${status}`, { defaultValue: status })}
     </Tag>
   );
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffH = (now - d) / (1000 * 60 * 60);
-  if (diffH < 24) return 'Today, ' + d.toLocaleTimeString('fr-CM', { hour: '2-digit', minute: '2-digit' });
-  if (diffH < 48) return 'Yesterday';
-  return d.toLocaleDateString('fr-CM', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
 function shortToken(token) {
-  if (!token) return '—';
-  return '#' + token.substring(0, 8).toUpperCase();
+  if (!token) return "—";
+  return "#" + token.substring(0, 8).toUpperCase();
 }
 
 export default function AIConversations() {
   const navigate = useNavigate();
   const isDark = useAdminTheme();
-  const bgCard   = isDark ? '#1E293B' : '#fff';
-  const border   = isDark ? '#334155' : '#EEF2F7';
-  const textMain = isDark ? '#F8FAFC' : '#0F172A';
-  const textSub  = isDark ? '#94A3B8' : '#64748B';
-  const primary  = isDark ? '#38bdf8' : '#023B6A';
-  const thBorder = isDark ? '#334155' : '#EEF2F7';
+  const { t, i18n } = useTranslation();
+  const isMobile = useMediaQuery("(max-width: 639px)");
 
-  const { data, isLoading } = useGetDashboardAiSessionsQuery(8);
+  const bgCard = isDark ? "#1E293B" : "#fff";
+  const border = isDark ? "#334155" : "#EEF2F7";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+  const hoverBg = isDark ? "#243247" : "#F8FAFC";
+
+  const { data, isLoading, isError, refetch } = useGetDashboardAiSessionsQuery(8, DASHBOARD_QUERY_OPTIONS);
   const sessions = data?.data ?? [];
 
-  const thStyle = {
-    padding: '16px 24px',
-    fontSize: 11,
-    fontWeight: 600,
-    color: textSub,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    borderBottom: `1px solid ${thBorder}`,
-  };
-  const tdStyle = { padding: '16px 24px', fontSize: 13, verticalAlign: 'middle' };
+  const cellPadding = isMobile ? "12px 14px" : "16px 24px";
+
+  // Styles scopés sur .ai-conv-table (thème + scrollbar invisible)
+  const tableCss = `
+    .ai-conv-table .ant-table {
+      background: transparent;
+      color: ${textMain};
+    }
+    .ai-conv-table .ant-table-thead > tr > th {
+      background: transparent !important;
+      color: ${textSub} !important;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: ${cellPadding};
+      border-bottom: 1px solid ${border};
+      white-space: nowrap;
+    }
+    .ai-conv-table .ant-table-thead > tr > th::before {
+      display: none !important;
+    }
+    .ai-conv-table .ant-table-tbody > tr > td {
+      background: transparent;
+      padding: ${cellPadding};
+      font-size: 13px;
+      border-bottom: 1px solid ${border};
+      white-space: nowrap;
+    }
+    .ai-conv-table .ant-table-tbody > tr:last-child > td {
+      border-bottom: none;
+    }
+    .ai-conv-table .ant-table-tbody > tr.ant-table-row:hover > td {
+      background: ${hoverBg} !important;
+    }
+    .ai-conv-table .ant-table-cell-fix-right,
+    .ai-conv-table .ant-table-cell-fix-left {
+      background: ${bgCard} !important;
+    }
+    .ai-conv-table .ant-table-tbody > tr.ant-table-row:hover > td.ant-table-cell-fix-right {
+      background: ${hoverBg} !important;
+    }
+
+    /* Défilement actif mais barre de scroll invisible */
+    .ai-conv-table .ant-table-content,
+    .ai-conv-table .ant-table-body,
+    .ai-conv-table .ant-table-container {
+      scrollbar-width: none;            /* Firefox */
+      -ms-overflow-style: none;         /* IE / ancien Edge */
+      -webkit-overflow-scrolling: touch;
+    }
+    .ai-conv-table .ant-table-content::-webkit-scrollbar,
+    .ai-conv-table .ant-table-body::-webkit-scrollbar,
+    .ai-conv-table .ant-table-container::-webkit-scrollbar {
+      display: none;                    /* Chrome / Safari / Android */
+      width: 0;
+      height: 0;
+    }
+  `;
+
+  const columns = [
+    {
+      title: t("admin.aiChat.sessionActive"),
+      dataIndex: "sessionToken",
+      key: "sessionToken",
+      render: (v) => (
+        <span style={{ fontWeight: 700, color: primary }}>{shortToken(v)}</span>
+      ),
+    },
+    {
+      title: t("admin.aiChat.visitor"),
+      dataIndex: "visitorName",
+      key: "visitorName",
+      render: (v) => (
+        <span style={{ fontWeight: 600, color: primary }}>{v || "—"}</span>
+      ),
+    },
+    {
+      title: t("admin.messages.email"),
+      dataIndex: "visitorEmail",
+      key: "visitorEmail",
+      render: (v) => <span style={{ color: textSub }}>{v || "—"}</span>,
+    },
+    {
+      title: t("admin.dashboard.lastActivity"),
+      dataIndex: "lastActivityAt",
+      key: "lastActivityAt",
+      render: (v) => (
+        <span style={{ color: textSub }}>{formatDashboardDate(v, t, i18n.language)}</span>
+      ),
+    },
+    {
+      title: t("admin.dashboard.status"),
+      dataIndex: "status",
+      key: "status",
+      render: (v) => <TransferStatusTag status={v} />,
+    },
+    {
+      title: t("admin.projects.action"),
+      key: "action",
+      align: "right",
+      fixed: isMobile ? "right" : undefined,
+      render: () => (
+        <Button
+          icon={<EyeOutlined />}
+          size="small"
+          onClick={() => navigate("/admin/aichat")}
+          style={{
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: 12,
+            color: textMain,
+            backgroundColor: bgCard,
+            borderColor: border,
+          }}
+        >
+          {!isMobile && t("admin.common.view")}
+        </Button>
+      ),
+    },
+  ];
 
   if (isLoading) {
     return (
-      <div style={{ background: bgCard, borderRadius: 18, border: `1px solid ${border}`, padding: 24 }}>
+      <div
+        style={{
+          background: bgCard,
+          borderRadius: 18,
+          border: `1px solid ${border}`,
+          padding: isMobile ? 16 : 24,
+        }}
+      >
         <Skeleton active paragraph={{ rows: 4 }} />
       </div>
     );
@@ -73,83 +211,85 @@ export default function AIConversations() {
     <div
       style={{
         background: bgCard,
-        borderRadius: 18,
+        borderRadius: isMobile ? 14 : 18,
         border: `1px solid ${border}`,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-        display: 'flex',
-        flexDirection: 'column',
-        marginTop: 24,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+        display: "flex",
+        flexDirection: "column",
+        marginTop: isMobile ? 0 : 24,
+        minWidth: 0,
+        overflow: "hidden",
       }}
     >
+      <style>{tableCss}</style>
+
       {/* Header */}
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '24px',
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: isMobile ? 8 : 16,
+          padding: isMobile ? 16 : 24,
           borderBottom: `1px solid ${border}`,
         }}
       >
-        <div>
-          <h3 style={{ fontWeight: 800, fontSize: 18, color: textMain, margin: '0 0 4px' }}>
-            AI Conversations Requiring Attention
+        <div style={{ minWidth: 0 }}>
+          <h3
+            style={{
+              fontWeight: 800,
+              fontSize: isMobile ? 16 : 18,
+              color: textMain,
+              margin: "0 0 4px",
+            }}
+          >
+            {t("admin.dashboard.aiConversations")}
           </h3>
-          <p style={{ fontSize: 13, color: textSub, margin: 0 }}>
-            Conversations transferred to the COMPULEC team
+          <p
+            style={{ fontSize: isMobile ? 12 : 13, color: textSub, margin: 0 }}
+          >
+            {t("admin.dashboard.aiConversationsSubtitle")}
           </p>
         </div>
-        <a
-          onClick={() => navigate('/admin/aichat')}
-          style={{ fontSize: 13, fontWeight: 700, color: primary, textDecoration: 'none', cursor: 'pointer' }}
+        <Link
+          to="/admin/aichat"
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: primary,
+            textDecoration: "none",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
         >
-          Open AI Chat
-        </a>
+          {t("admin.dashboard.openAiChat")}
+        </Link>
       </div>
 
-      {sessions.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8', fontSize: 13 }}>
-          No active or transferred sessions at the moment.
+      {isError ? (
+        <WidgetError onRetry={refetch} />
+      ) : sessions.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px 0",
+            color: "#94A3B8",
+            fontSize: 13,
+          }}
+        >
+          {t("admin.dashboard.noAiSessions")}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr>
-                <th style={thStyle}>SESSION</th>
-                <th style={thStyle}>VISITOR</th>
-                <th style={thStyle}>EMAIL</th>
-                <th style={thStyle}>DATE</th>
-                <th style={thStyle}>STATUS</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessions.map((row, idx) => (
-                <tr
-                  key={row.id}
-                  style={{ borderBottom: idx !== sessions.length - 1 ? `1px solid ${border}` : 'none' }}
-                >
-                  <td style={{ ...tdStyle, fontWeight: 700, color: primary }}>{shortToken(row.sessionToken)}</td>
-                  <td style={{ ...tdStyle, color: primary, fontWeight: 600 }}>{row.visitorName || '—'}</td>
-                  <td style={{ ...tdStyle, color: textSub }}>{row.visitorEmail || '—'}</td>
-                  <td style={{ ...tdStyle, color: textSub }}>{formatDate(row.createdAt)}</td>
-                  <td style={tdStyle}><TransferStatusTag status={row.status} /></td>
-                  <td style={{ ...tdStyle, textAlign: 'right' }}>
-                    <Button
-                      icon={<EyeOutlined />}
-                      size="small"
-                      onClick={() => navigate('/admin/aichat')}
-                      style={{ borderRadius: 8, fontWeight: 600, fontSize: 12, color: textMain, backgroundColor: bgCard, borderColor: border }}
-                    >
-                      View
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          className="ai-conv-table"
+          columns={columns}
+          dataSource={sessions}
+          rowKey="id"
+          pagination={false}
+          scroll={{ x: "max-content" }}
+          size={isMobile ? "small" : "middle"}
+        />
       )}
     </div>
   );

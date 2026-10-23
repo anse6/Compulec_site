@@ -1,13 +1,15 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { BASE_URL, API_TAGS } from '../constants';
-import { logout } from '../../store/authSlice';
+import { logout, setAccessToken } from '../../store/authSlice';
 
 /**
- * baseQuery configurée avec le Bearer token depuis Redux.
- * Re-essaie avec le refresh token si le serveur renvoie 401.
+ * baseQuery configurée avec le Bearer token (en mémoire) depuis Redux.
+ * credentials: 'include' → le navigateur envoie le cookie HttpOnly du refresh token
+ * aux endpoints /api/auth (et accepte le Set-Cookie du serveur).
  */
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
+  credentials: 'include',
   prepareHeaders: (headers, { getState }) => {
     const token = getState().auth.accessToken;
     if (token) {
@@ -21,45 +23,48 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+// Un seul refresh à la fois : le refresh token est rotatif (à usage unique),
+// plusieurs requêtes 401 simultanées doivent partager le même renouvellement.
+let refreshPromise = null;
+
+async function refreshAccessToken(api, extraOptions) {
+  const attempt = () =>
+    baseQuery({ url: '/auth/refresh-token', method: 'POST' }, api, extraOptions);
+
+  let result = await attempt();
+  if (result?.error?.status === 401) {
+    // Un autre onglet vient peut-être de faire tourner le cookie : on réessaie une fois
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    result = await attempt();
+  }
+  return result?.data?.data?.access_token ? result.data.data : null;
+}
+
 /**
- * baseQuery with automatic refresh-token retry on 401.
+ * baseQuery avec renouvellement automatique de l'access token sur 401.
  */
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result?.error?.status === 401) {
-    const refreshToken = api.getState().auth.refreshToken;
-    if (refreshToken) {
-      const refreshResult = await baseQuery(
-        {
-          url: `/auth/refresh-token?refreshToken=${encodeURIComponent(refreshToken)}`,
-          method: 'POST',
-        },
-        api,
-        extraOptions
-      );
-
-      if (refreshResult?.data?.data?.access_token) {
-        // On a un nouveau token — on importe dynamiquement pour éviter les
-        // dépendances circulaires
-        const { setTokens } = await import('../../store/authSlice');
-        api.dispatch(
-          setTokens({
-            accessToken: refreshResult.data.data.access_token,
-            refreshToken: refreshResult.data.data.refresh_token,
-          })
-        );
-        // Retry the original query
-        result = await baseQuery(args, api, extraOptions);
-      } else {
-        // Refresh failed → logout
-        api.dispatch(logout());
-      }
-    } else {
-      api.dispatch(logout());
-    }
+  const url = typeof args === 'string' ? args : args.url;
+  // Les endpoints d'authentification gèrent leurs propres erreurs (mauvais mot de passe, code 2FA…)
+  if (result?.error?.status !== 401 || url.startsWith('/auth/')) {
+    return result;
   }
 
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken(api, extraOptions).finally(() => {
+      refreshPromise = null;
+    });
+  }
+  const session = await refreshPromise;
+
+  if (session) {
+    api.dispatch(setAccessToken(session));
+    result = await baseQuery(args, api, extraOptions);
+  } else {
+    api.dispatch(logout());
+  }
   return result;
 };
 

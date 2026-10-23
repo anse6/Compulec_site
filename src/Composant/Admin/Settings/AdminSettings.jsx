@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAdminTheme } from "../AdminThemeContext";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "../../../store/authSlice";
 import {
   Tabs,
   Form,
@@ -19,11 +22,15 @@ import {
   GlobalOutlined,
   SaveOutlined,
   KeyOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import {
   useGetCurrentUserQuery,
   useChangePasswordMutation,
+  useGetMyMfaQuery,
+  useRegenerateBackupCodesMutation,
 } from "../../../services/api/usersApi";
+import BackupCodesList from "../../BackupCodesList";
 import AvatarWithPopover from "../Users/AvatarWithPopover";
 
 // ── Helper
@@ -77,6 +84,7 @@ function ProfileTab({ user, loading }) {
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
   const textSub = isDark ? "#94A3B8" : "#64748B";
   const primary = isDark ? "#38bdf8" : "#023B6A";
+  const { t } = useTranslation();
 
   const [form] = Form.useForm();
   const fullName = user ? `${user.prenom || ""} ${user.nom || ""}`.trim() : "—";
@@ -126,7 +134,7 @@ function ProfileTab({ user, loading }) {
                 padding: "2px 12px",
               }}
             >
-              {user?.role || "Administrator"}
+              {user?.role || t('admin.settings.administrator')}
             </Tag>
             <Tag
               color={user?.actif ? "success" : "default"}
@@ -136,7 +144,7 @@ function ProfileTab({ user, loading }) {
                 padding: "2px 12px",
               }}
             >
-              {user?.actif ? "Active" : "Inactive"}
+              {user?.actif ? t('admin.settings.active') : t('admin.settings.inactive')}
             </Tag>
           </div>
         </div>
@@ -145,8 +153,8 @@ function ProfileTab({ user, loading }) {
       {/* Account Details */}
       <div>
         <SectionHeader
-          title="Account Information"
-          subtitle="Your account details registered in the system."
+          title={t('admin.settings.accountInfo')}
+          subtitle={t('admin.settings.accountInfoDesc')}
         />
         <Descriptions
           column={1}
@@ -161,22 +169,22 @@ function ProfileTab({ user, loading }) {
           }}
           contentStyle={{ fontSize: 13, color: primary, fontWeight: 600 }}
         >
-          <Descriptions.Item label="First Name">
+          <Descriptions.Item label={t('admin.settings.firstName')}>
             {user?.prenom || "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Last Name">
+          <Descriptions.Item label={t('admin.settings.lastName')}>
             {user?.nom || "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Email">
+          <Descriptions.Item label={t('admin.settings.email')}>
             {user?.email || "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Phone">
+          <Descriptions.Item label={t('admin.settings.phone')}>
             {user?.phone || "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Function">
+          <Descriptions.Item label={t('admin.settings.function')}>
             {user?.fonction || "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Role">
+          <Descriptions.Item label={t('admin.settings.role')}>
             <Tag
               color="blue"
               style={{
@@ -203,16 +211,18 @@ function SecurityTab() {
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
   const textSub = isDark ? "#94A3B8" : "#64748B";
   const primary = isDark ? "#38bdf8" : "#023B6A";
+  const { t } = useTranslation();
 
   const [form] = Form.useForm();
   const [changePassword, { isLoading }] = useChangePasswordMutation();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (values) => {
     if (values.nouveauMotDePasse !== values.confirmNouveauMotDePasse) {
       form.setFields([
         {
           name: "confirmNouveauMotDePasse",
-          errors: ["Les mots de passe ne correspondent pas."],
+          errors: [t('admin.settings.passwordMismatch')],
         },
       ]);
       return;
@@ -223,11 +233,13 @@ function SecurityTab() {
         nouveauMotDePasse: values.nouveauMotDePasse,
         confirmNouveauMotDePasse: values.confirmNouveauMotDePasse,
       }).unwrap();
-      message.success(result.message || "Mot de passe modifié avec succès !");
+      // Les autres sessions sont fermées : on enregistre la nouvelle session renvoyée
+      if (result.data?.access_token) dispatch(setCredentials(result.data));
+      message.success(result.message || t('admin.settings.passwordSuccess'));
       form.resetFields();
     } catch (err) {
       const errMsg =
-        err?.data?.message || "Erreur lors du changement de mot de passe.";
+        err?.data?.message || t('admin.settings.passwordError');
       message.error(errMsg);
       if (errMsg.toLowerCase().includes("ancien")) {
         form.setFields([{ name: "ancienMotDePasse", errors: [errMsg] }]);
@@ -238,8 +250,8 @@ function SecurityTab() {
   return (
     <div style={{ maxWidth: 540 }}>
       <SectionHeader
-        title="Change Password"
-        subtitle="Update your password to keep your account secure."
+        title={t('admin.settings.securityTitle')}
+        subtitle={t('admin.settings.securitySubtitle')}
       />
 
       <div
@@ -279,7 +291,7 @@ function SecurityTab() {
                 color: textMain,
               }}
             >
-              Password Update
+              {t('admin.settings.passwordUpdate')}
             </div>
             <div
               style={{
@@ -287,7 +299,7 @@ function SecurityTab() {
                 color: textSub,
               }}
             >
-              Minimum 8 characters required.
+              {t('admin.settings.passwordMinDesc')}
             </div>
           </div>
         </div>
@@ -302,20 +314,20 @@ function SecurityTab() {
             name="ancienMotDePasse"
             label={
               <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
-                Current Password
+                {t('admin.settings.currentPassword')}
               </span>
             }
             rules={[
               {
                 required: true,
-                message: "Veuillez entrer votre mot de passe actuel.",
+                message: t('admin.settings.enterCurrentRequired'),
               },
             ]}
           >
             <Input.Password
               size="large"
               prefix={<LockOutlined style={{ color: textSub }} />}
-              placeholder="Enter current password"
+              placeholder={t('admin.settings.currentPasswordPlaceholder')}
               style={{ borderRadius: 10 }}
             />
           </Form.Item>
@@ -324,24 +336,24 @@ function SecurityTab() {
             name="nouveauMotDePasse"
             label={
               <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
-                New Password
+                {t('admin.settings.newPassword')}
               </span>
             }
             rules={[
               {
                 required: true,
-                message: "Veuillez entrer un nouveau mot de passe.",
+                message: t('admin.settings.enterNewRequired'),
               },
               {
-                min: 8,
-                message: "Le mot de passe doit contenir au moins 8 caractères.",
+                min: 12,
+                message: t('admin.settings.min8CharsRequired'),
               },
             ]}
           >
             <Input.Password
               size="large"
               prefix={<LockOutlined style={{ color: textSub }} />}
-              placeholder="Enter new password"
+              placeholder={t('admin.settings.newPasswordPlaceholder')}
               style={{ borderRadius: 10 }}
             />
           </Form.Item>
@@ -350,20 +362,20 @@ function SecurityTab() {
             name="confirmNouveauMotDePasse"
             label={
               <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
-                Confirm New Password
+                {t('admin.settings.confirmNewPassword')}
               </span>
             }
             rules={[
               {
                 required: true,
-                message: "Veuillez confirmer le nouveau mot de passe.",
+                message: t('admin.settings.confirmNewRequired'),
               },
             ]}
           >
             <Input.Password
               size="large"
               prefix={<LockOutlined style={{ color: textSub }} />}
-              placeholder="Confirm new password"
+              placeholder={t('admin.settings.confirmNewPasswordPlaceholder')}
               style={{ borderRadius: 10 }}
             />
           </Form.Item>
@@ -389,10 +401,96 @@ function SecurityTab() {
               transition: "background 0.15s",
             }}
           >
-            Update Password
+            {t('admin.settings.updatePassword')}
           </Button>
         </Form>
       </div>
+
+      <MfaSection />
+    </div>
+  );
+}
+
+//  Bloc : double authentification (état + nouveaux codes de secours)
+
+function MfaSection() {
+  const isDark = useAdminTheme();
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
+  const { t } = useTranslation();
+  const [form] = Form.useForm();
+  const { data } = useGetMyMfaQuery();
+  const [regenerate, { isLoading }] = useRegenerateBackupCodesMutation();
+  const [newCodes, setNewCodes] = useState(null);
+
+  const status = data?.data;
+
+  const handleSubmit = async (values) => {
+    try {
+      const result = await regenerate(String(values.code).replace(/[^0-9]/g, "")).unwrap();
+      setNewCodes(result.data);
+      form.resetFields();
+      message.success(result.message);
+    } catch (err) {
+      message.error(err?.data?.message || t("mfa.settings.error"));
+      form.resetFields();
+    }
+  };
+
+  return (
+    <div
+      style={{
+        backgroundColor: isDark ? "#0F172A" : "#F8FAFC",
+        border: `1px solid ${border}`,
+        borderRadius: 16,
+        padding: "28px 32px",
+        marginTop: 24,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <SafetyCertificateOutlined style={{ color: primary, fontSize: 22 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: textMain }}>{t("mfa.settings.title")}</div>
+          <div style={{ fontSize: 12, color: textSub }}>{t("mfa.settings.subtitle")}</div>
+        </div>
+        {status && (
+          <Tag color={status.enabled ? "success" : "error"} style={{ borderRadius: 999, fontWeight: 600 }}>
+            {status.enabled ? t("mfa.settings.enabled") : t("mfa.settings.disabled")}
+          </Tag>
+        )}
+      </div>
+
+      {status && !status.enabled && (
+        <p style={{ fontSize: 13, color: textSub, margin: 0 }}>{t("mfa.settings.notConfiguredHint")}</p>
+      )}
+
+      {status?.enabled && (
+        <>
+          <p style={{ fontSize: 13, color: status.remainingBackupCodes <= 2 ? "#DC2626" : textSub, marginBottom: 16 }}>
+            {t("mfa.settings.remaining", { count: status.remainingBackupCodes })}
+          </p>
+
+          {newCodes ? (
+            <BackupCodesList codes={newCodes} onDone={() => setNewCodes(null)} doneLabel={t("mfa.settings.close")} />
+          ) : (
+            <Form form={form} layout="vertical" requiredMark={false} onFinish={handleSubmit}>
+              <Form.Item
+                name="code"
+                label={<span style={{ fontSize: 13, fontWeight: 600, color: primary }}>{t("mfa.settings.codeLabel")}</span>}
+                rules={[{ required: true, len: 6, message: t("mfa.codeInvalid") }]}
+              >
+                <Input.OTP length={6} size="large" />
+              </Form.Item>
+              <Button htmlType="submit" loading={isLoading} icon={<KeyOutlined />}
+                style={{ borderRadius: 10, fontWeight: 700 }}>
+                {t("mfa.settings.regenerate")}
+              </Button>
+            </Form>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -406,30 +504,31 @@ function NotificationsTab() {
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
   const textSub = isDark ? "#94A3B8" : "#64748B";
   const primary = isDark ? "#38bdf8" : "#023B6A";
+  const { t } = useTranslation();
 
   const items = [
     {
       key: "msg",
-      title: "New Message Alerts",
-      desc: "Receive an email when a new message is received via the contact form.",
+      title: t('admin.settings.newMsgAlert'),
+      desc: t('admin.settings.newMsgDesc'),
       defaultChecked: true,
     },
     {
       key: "chat",
-      title: "AI Chat Transfers",
-      desc: "Receive an email when the AI assistant transfers a chat session to a human agent.",
+      title: t('admin.settings.aiChatTransfers'),
+      desc: t('admin.settings.aiChatDesc'),
       defaultChecked: true,
     },
     {
       key: "weekly",
-      title: "Weekly Summary",
-      desc: "Receive a weekly digest of website activity and new leads.",
+      title: t('admin.settings.weeklySummary'),
+      desc: t('admin.settings.weeklySummaryDesc'),
       defaultChecked: false,
     },
     {
       key: "consult",
-      title: "New Consultation Requests",
-      desc: "Get notified when a new consultation request is submitted on the website.",
+      title: t('admin.settings.newConsult'),
+      desc: t('admin.settings.newConsultDesc'),
       defaultChecked: true,
     },
   ];
@@ -437,8 +536,8 @@ function NotificationsTab() {
   return (
     <div style={{ maxWidth: 620 }}>
       <SectionHeader
-        title="Notification Preferences"
-        subtitle="Manage how and when you receive alerts from the system."
+        title={t('admin.settings.notifTitle')}
+        subtitle={t('admin.settings.notifSubtitle')}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {items.map((item) => (
@@ -494,6 +593,7 @@ function GeneralTab() {
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
   const textSub = isDark ? "#94A3B8" : "#64748B";
   const primary = isDark ? "#38bdf8" : "#023B6A";
+  const { t } = useTranslation();
 
   return (
     <div
@@ -505,8 +605,8 @@ function GeneralTab() {
       }}
     >
       <SectionHeader
-        title="General Settings"
-        subtitle="Update the core information of your website."
+        title={t('admin.settings.generalTitle')}
+        subtitle={t('admin.settings.generalSubtitle')}
       />
 
       <Form
@@ -530,7 +630,7 @@ function GeneralTab() {
             name="companyName"
             label={
               <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
-                Company Name
+                {t('admin.settings.companyName')}
               </span>
             }
           >
@@ -540,7 +640,7 @@ function GeneralTab() {
             name="supportEmail"
             label={
               <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
-                Support Email
+                {t('admin.settings.supportEmail')}
               </span>
             }
           >
@@ -551,7 +651,7 @@ function GeneralTab() {
           name="address"
           label={
             <span style={{ fontSize: 13, fontWeight: 600, color: primary }}>
-              Physical Address
+              {t('admin.settings.address')}
             </span>
           }
         >
@@ -603,6 +703,7 @@ export default function AdminSettings() {
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
   const textSub = isDark ? "#94A3B8" : "#64748B";
   const primary = isDark ? "#38bdf8" : "#023B6A";
+  const { t } = useTranslation();
 
   const { data: userData, isLoading } = useGetCurrentUserQuery();
   const user = userData?.data ?? null;
@@ -619,7 +720,7 @@ export default function AdminSettings() {
             fontWeight: 600,
           }}
         >
-          <UserOutlined /> Profile
+          <UserOutlined /> {t('admin.settings.profile')}
         </span>
       ),
       children: <ProfileTab user={user} loading={isLoading} />,
@@ -635,7 +736,7 @@ export default function AdminSettings() {
             fontWeight: 600,
           }}
         >
-          <SettingOutlined /> General
+          <SettingOutlined /> {t('admin.settings.general')}
         </span>
       ),
       children: <GeneralTab />,
@@ -651,7 +752,7 @@ export default function AdminSettings() {
             fontWeight: 600,
           }}
         >
-          <BellOutlined /> Notifications
+          <BellOutlined /> {t('admin.settings.notifications')}
         </span>
       ),
       children: <NotificationsTab />,
@@ -667,7 +768,7 @@ export default function AdminSettings() {
             fontWeight: 600,
           }}
         >
-          <LockOutlined /> Security
+          <LockOutlined /> {t('admin.settings.security')}
         </span>
       ),
       children: <SecurityTab />,
@@ -686,7 +787,7 @@ export default function AdminSettings() {
             margin: "0 0 4px",
           }}
         >
-          Settings
+          {t('admin.settings.title')}
         </h1>
         <p
           style={{
@@ -695,7 +796,7 @@ export default function AdminSettings() {
             margin: 0,
           }}
         >
-          Configure global preferences and options for the COMPULEC admin panel.
+          {t('admin.settings.subtitle')}
         </p>
       </div>
 

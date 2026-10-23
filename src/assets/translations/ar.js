@@ -178,6 +178,8 @@ export const ar = {
     tagline: "المشاريع والإنجازات",
     title: "عمليات تنفيذ تتحدث عن نفسها",
     allProjects: "جميع المشاريع",
+    emptyProjects: "لا توجد مشاريع منشورة حاليًا.",
+    loadError: "تعذّر تحميل المشاريع.",
     viewCase: "عرض دراسة الحالة",
     items: [
       {
@@ -674,6 +676,9 @@ export const ar = {
     tagline: "الأخبار ووجهات النظر",
     title: "آخر أخبار كومبيولك",
     allArticles: "جميع المقالات",
+    emptyArticles: "لا توجد مقالات منشورة حاليًا.",
+    loadError: "تعذّر تحميل المقالات.",
+    readTime: "{n} دقائق قراءة",
     items: [
       {
         id: "1",

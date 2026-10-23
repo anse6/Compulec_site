@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
 import { ConfigProvider, theme } from "antd";
+import { useTranslation } from "react-i18next";
+import frFR from "antd/locale/fr_FR";
+import enUS from "antd/locale/en_US";
+import dayjs from "dayjs";
+import "dayjs/locale/fr";
+import { useSelector } from "react-redux";
 import {
   Routes,
   Route,
@@ -9,29 +15,29 @@ import {
 } from "react-router-dom";
 
 import { translations } from "./assets/translations";
-import Header from "./Composant/Header";
-import Hero from "./Composant/Hero";
-import Commitments from "./Composant/Commitments";
-import ServicesGrid from "./Composant/ServicesGrid";
-import ProjectsGrid from "./Composant/ProjectsGrid";
-import Testimonials from "./Composant/Testimonials";
-import NewsGrid from "./Composant/NewsGrid";
-import About from "./Composant/About";
-import ServicesPage from "./Composant/service";
-import ServiceDetailPage from "./Composant/servicesComponents/ServiceDetailPage";
-import ProjectsPage from "./Composant/ProjectsPage";
-import ResourcesPage from "./Composant/ResourcesPage";
-import FaqPage from "./Composant/FaqPage";
-import Footer from "./Composant/Footer";
-import ChatWidget from "./Composant/ChatWidget";
+import Header from "../app/ui/Header";
+import Hero from "../app/sections/Hero";
+import Commitments from "../app/sections/Commitments";
+import ServicesGrid from "../app/sections/ServicesGrid";
+import ProjectsGrid from "../app/sections/ProjectsGrid";
+import Testimonials from "../app/sections/Testimonials";
+import NewsGrid from "../app/sections/NewsGrid";
+import About from "../app/pages/AboutPage";
+import ServicesPage from "../app/pages/ServicesPage";
+import ServiceDetailPage from "../app/pages/ServiceDetailPage";
+import ProjectsPage from "../app/pages/ProjectsPage";
+import ResourcesPage from "../app/pages/ResourcesPage";
+import FaqPage from "../app/pages/FaqPage";
+import Footer from "../app/ui/Footer";
+import ChatWidget from "../app/ui/ChatWidget";
 import { useParams } from "react-router-dom";
-import PartnersSection from "./Composant/composantanimation/Partnerssection";
-import ProjectDetailPage from "./Composant/ProjectDetailPage";
-import ResourceDetailPage from "./Composant/ResourceDetailPage";
-import GalleryPage from "./Composant/GalleryPage";
-import ConsultationPage from "./Composant/ConsultationPage";
-import ContactPage from "./Composant/ContactPage";
-import LoginPage from "./Composant/LoginPage";
+import PartnersSection from "../app/sections/PartnersSection";
+import ProjectDetailPage from "../app/pages/ProjectDetailPage";
+import ResourceDetailPage from "../app/pages/ResourceDetailPage";
+import GalleryPage from "../app/pages/GalleryPage";
+import ConsultationPage from "../app/pages/ConsultationPage";
+import ContactPage from "../app/pages/ContactPage";
+import LoginPage from "../app/pages/LoginPage";
 import AdminLayout from "./Composant/Admin/AdminLayout";
 import Dashboard from "./Composant/Admin/Dashboard/Dashboard";
 import AdminProjects from "./Composant/Admin/Projects/AdminProjects";
@@ -47,6 +53,13 @@ import NewsForm from "./Composant/Admin/News/NewsForm";
 import NewsDetails from "./Composant/Admin/News/NewsDetails";
 import AdminUsers from "./Composant/Admin/Users/AdminUsers";
 import AdminSettings from "./Composant/Admin/Settings/AdminSettings";
+import { selectIsAuthenticated } from "./store/authSlice";
+
+// Bloque l'accès au back-office sans session (la sécurité réelle reste côté API)
+function RequireAuth({ children }) {
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
 
 function ServiceDetailPageWrapper({ t, onOpenConsultation }) {
   const { slug } = useParams();
@@ -141,6 +154,14 @@ export default function App() {
 
   const t = translations[currentLang];
 
+  // Textes intégrés d'antd (pagination, « Aucune donnée », boutons OK…) et dates dayjs dans la langue i18n
+  const { i18n } = useTranslation();
+  const isFrench = (i18n.resolvedLanguage || i18n.language || "fr").startsWith("fr");
+  const antdLocale = isFrench ? frFR : enUS;
+  useEffect(() => {
+    dayjs.locale(isFrench ? "fr" : "en");
+  }, [isFrench]);
+
   const antTheme = {
     algorithm: theme.darkAlgorithm,
     token: {
@@ -170,7 +191,7 @@ export default function App() {
   };
 
   return (
-    <ConfigProvider theme={antTheme}>
+    <ConfigProvider theme={antTheme} locale={antdLocale}>
       <Routes>
         {/* ── Login routes: NO Header, Footer or ChatWidget ── */}
         <Route path="/login" element={<LoginPage currentView="signin" />} />
@@ -186,9 +207,20 @@ export default function App() {
           path="/password-updated"
           element={<LoginPage currentView="updated" />}
         />
+        <Route
+          path="/activate-account"
+          element={<LoginPage currentView="activate" />}
+        />
 
         {/* ── Admin routes: NO public Header/Footer ── */}
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth>
+              <AdminLayout />
+            </RequireAuth>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="projects" element={<AdminProjects />} />
           <Route path="projects/add" element={<ProjectForm />} />
@@ -237,9 +269,9 @@ export default function App() {
                         />
                         <Commitments t={t} />
                         <ServicesGrid t={t} onNavigate={handleNavigate} />
-                        <ProjectsGrid t={t} onNavigate={handleNavigate} />
+                        <ProjectsGrid t={t} currentLang={currentLang} onNavigate={handleNavigate} />
                         <Testimonials t={t} />
-                        <NewsGrid t={t} />
+                        <NewsGrid t={t} currentLang={currentLang} />
                         <PartnersSection t={t} />
                       </>
                     }

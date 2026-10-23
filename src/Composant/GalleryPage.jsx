@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import PageHeader from './PageHeader'
 import { useGetAllGalleriesQuery } from '../services/api/galleryApi'
+import { BASE_URL } from '../services/constants'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-const BASE_IMG = 'http://localhost:8080/api'
+const BASE_IMG = BASE_URL
 
 function getImageUrl(img) {
   if (!img) return null

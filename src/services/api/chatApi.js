@@ -45,34 +45,24 @@ export const chatApi = baseApi.injectEndpoints({
     // ENDPOINTS ADMIN (Nécessite JWT)
     // ------------------------------------------
 
-    // Liste des sessions en attente (WAITING_ADMIN)
-    getPendingSessions: builder.query({
-      query: () => ({
-        url: `/chat/admin/sessions/pending`,
+    // Conversations d'un statut (ACTIVE = avec le bot, WAITING_ADMIN, WITH_ADMIN, CLOSED),
+    // triées par dernière activité, paginées, avec recherche (nom, email, n° de session)
+    searchChatSessions: builder.query({
+      query: ({ status, q = "", page = 0, size = 20 }) => ({
+        url: `/chat/admin/sessions`,
         method: "GET",
+        params: { status, page, size, ...(q.trim() ? { q: q.trim() } : {}) },
       }),
       providesTags: [API_TAGS.CHAT],
     }),
 
-    // Liste des sessions actives (WITH_ADMIN)
-    getActiveSessions: builder.query({
-      query: () => ({
-        url: `/chat/admin/sessions/active`,
-        method: "GET",
-      }),
+    // Compteurs des onglets + total des messages non lus
+    getChatCounts: builder.query({
+      query: () => ({ url: `/chat/admin/sessions/counts`, method: "GET" }),
       providesTags: [API_TAGS.CHAT],
     }),
 
-    // Liste des sessions fermées (CLOSED)
-    getClosedSessions: builder.query({
-      query: () => ({
-        url: `/chat/admin/sessions/closed`,
-        method: "GET",
-      }),
-      providesTags: [API_TAGS.CHAT],
-    }),
-
-    // Détail d'une session pour l'administrateur
+    // Détail d'une session pour l'équipe
     getSessionDetail: builder.query({
       query: (sessionToken) => ({
         url: `/chat/admin/sessions/${sessionToken}`,
@@ -81,17 +71,26 @@ export const chatApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, sessionToken) => [{ type: API_TAGS.CHAT, id: sessionToken }],
     }),
 
-    // Réponse de l'administrateur
+    // Prendre en charge une conversation
+    takeOverSession: builder.mutation({
+      query: (sessionToken) => ({ url: `/chat/admin/take/${sessionToken}`, method: "POST" }),
+      invalidatesTags: [API_TAGS.CHAT],
+    }),
+
+    // Réponse d'un membre de l'équipe (signée)
     adminReply: builder.mutation({
       query: (data) => ({
         url: `/chat/admin/reply`,
         method: "POST",
         body: data, // { sessionToken, message }
       }),
-      invalidatesTags: (_result, _error, arg) => [
-        API_TAGS.CHAT, 
-        { type: API_TAGS.CHAT, id: arg.sessionToken }
-      ],
+      invalidatesTags: [API_TAGS.CHAT],
+    }),
+
+    // Marquer les messages du visiteur comme lus
+    markSessionRead: builder.mutation({
+      query: (sessionToken) => ({ url: `/chat/admin/read/${sessionToken}`, method: "PATCH" }),
+      invalidatesTags: [API_TAGS.CHAT],
     }),
 
     // Fermer une session
@@ -111,10 +110,11 @@ export const {
   useSendMessageMutation,
   useRequestAdminTransferMutation,
   useGetChatHistoryQuery,
-  useGetPendingSessionsQuery,
-  useGetActiveSessionsQuery,
-  useGetClosedSessionsQuery,
+  useSearchChatSessionsQuery,
+  useGetChatCountsQuery,
   useGetSessionDetailQuery,
+  useTakeOverSessionMutation,
   useAdminReplyMutation,
+  useMarkSessionReadMutation,
   useCloseSessionMutation,
 } = chatApi;

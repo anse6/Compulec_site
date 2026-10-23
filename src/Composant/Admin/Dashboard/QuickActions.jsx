@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useAdminTheme } from "../AdminThemeContext";
 import { useNavigate } from "react-router-dom";
 import {
@@ -21,15 +22,16 @@ function ArrowRight({ color }) {
   );
 }
 
-const ACTIONS = [
-  { label: "New Project",    desc: "Publish a case study",  Icon: IconNewProject,      path: "/admin/projects" },
-  { label: "Upload Images",  desc: "Add to the gallery",    Icon: IconUploadImages,    path: "/admin/gallery" },
-  { label: "Publish News",   desc: "Write a new article",   Icon: IconReviewEnquiries, path: "/admin/news" },
-];
-
 export default function QuickActions() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const isDark = useAdminTheme();
+
+  const ACTIONS = [
+    { label: t("admin.dashboard.newProject"),   desc: t("admin.dashboard.newProjectDesc"),   Icon: IconNewProject,      path: "/admin/projects" },
+    { label: t("admin.dashboard.uploadImages"), desc: t("admin.dashboard.uploadImagesDesc"), Icon: IconUploadImages,    path: "/admin/gallery" },
+    { label: t("admin.dashboard.publishNews"),  desc: t("admin.dashboard.publishNewsDesc"),  Icon: IconReviewEnquiries, path: "/admin/news" },
+  ];
   const bgCard   = isDark ? "#1E293B" : "#ffffff";
   const border   = isDark ? "#334155" : "#EEF2F7";
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
@@ -49,7 +51,7 @@ export default function QuickActions() {
       }}
     >
       <h3 style={{ fontWeight: 800, fontSize: 17, color: textMain, margin: "0 0 20px" }}>
-        Quick actions
+        {t("admin.dashboard.quickActions")}
       </h3>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1, justifyContent: "center" }}>

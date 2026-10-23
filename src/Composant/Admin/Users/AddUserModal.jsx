@@ -12,6 +12,8 @@ import {
 } from "antd";
 import { UserAddOutlined } from "@ant-design/icons";
 import { useCreateManagerMutation } from "../../../services/api/usersApi";
+import ActivationCodeModal from "./ActivationCodeModal";
+import { useTranslation } from "react-i18next";
 import { message as antMessage } from "antd";
 
 const { Option } = Select;
@@ -40,6 +42,7 @@ function getInitials(name = "") {
 
 export default function AddUserModal({ isOpen, onClose }) {
   const isDark = useAdminTheme();
+  const { t } = useTranslation();
   const bgCard = isDark ? "#1E293B" : "#ffffff";
   const border = isDark ? "#334155" : "#E2E8F0";
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
@@ -54,6 +57,8 @@ export default function AddUserModal({ isOpen, onClose }) {
   const initials = getInitials(fullName);
 
   const [createManager, { isLoading }] = useCreateManagerMutation();
+  // Réponse de création : contient le code d'activation, affiché une seule fois
+  const [invitation, setInvitation] = useState(null);
 
   useEffect(() => {
     if (!isOpen) form.resetFields();
@@ -61,7 +66,7 @@ export default function AddUserModal({ isOpen, onClose }) {
 
   const handleFinish = async (values) => {
     try {
-      await createManager({
+      const result = await createManager({
         nom: values.nom.trim(),
         prenom: values.prenom.trim(),
         email: values.email.trim(),
@@ -69,14 +74,11 @@ export default function AddUserModal({ isOpen, onClose }) {
         fonction: values.fonction.trim(),
         sexe: values.sexe,
         dateNaissance: values.dateNaissance?.format("YYYY-MM-DD"),
-        password: values.password,
-        confirmPassword: values.confirmPassword,
       }).unwrap();
-      antMessage.success(
-        "Manager créé avec succès ! Un e-mail de bienvenue a été envoyé.",
-      );
+      antMessage.success(result.message || t("admin.users.invite.sent"));
       form.resetFields();
       onClose();
+      setInvitation(result.data);
     } catch (err) {
       antMessage.error(
         err?.data?.message || "Erreur lors de la création du compte.",
@@ -85,6 +87,8 @@ export default function AddUserModal({ isOpen, onClose }) {
   };
 
   return (
+    <>
+    <ActivationCodeModal invitation={invitation} onClose={() => setInvitation(null)} />
     <Modal
       open={isOpen}
       onCancel={onClose}
@@ -104,10 +108,10 @@ export default function AddUserModal({ isOpen, onClose }) {
           </Avatar>
           <div>
             <p className="text-[18px] font-bold  m-0 leading-tight" style={{ color: primary }}>
-              Add Manager
+              {t('admin.users.addUser')}
             </p>
             <p className="text-[12px] text-slate-400 m-0">
-              Créer un nouveau compte Manager
+              {t('admin.users.addDesc')}
             </p>
           </div>
         </div>
@@ -129,7 +133,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           <Form.Item
             label={
               <span className="text-[13px] font-semibold " style={{ color: primary }}>
-                Prénom
+                {t('admin.users.firstName')}
               </span>
             }
             name="prenom"
@@ -139,12 +143,12 @@ export default function AddUserModal({ isOpen, onClose }) {
             ]}
             className="flex-1"
           >
-            <Input size="large" placeholder="Prenom" className="rounded-lg" />
+            <Input size="large" className="rounded-lg" />
           </Form.Item>
           <Form.Item
             label={
               <span className="text-[13px] font-semibold " style={{ color: primary }}>
-                Nom
+                {t('admin.users.lastName')}
               </span>
             }
             name="nom"
@@ -154,7 +158,7 @@ export default function AddUserModal({ isOpen, onClose }) {
             ]}
             className="flex-1"
           >
-            <Input size="large" placeholder="Nom" className="rounded-lg" />
+            <Input size="large" className="rounded-lg" />
           </Form.Item>
         </div>
 
@@ -163,7 +167,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           <Form.Item
             label={
               <span className="text-[13px] font-semibold " style={{ color: primary }}>
-                Email
+                {t('admin.messages.email')}
               </span>
             }
             name="email"
@@ -181,7 +185,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           <Form.Item
             label={
               <span className="text-[13px] font-semibold " style={{ color: primary }}>
-                Téléphone
+                {t('admin.users.phone')}
               </span>
             }
             name="phone"
@@ -207,7 +211,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           <Form.Item
             label={
               <span className="text-[13px] font-semibold " style={{ color: primary }}>
-                Fonction
+                {t('admin.users.role')}
               </span>
             }
             name="fonction"
@@ -223,7 +227,7 @@ export default function AddUserModal({ isOpen, onClose }) {
           <Form.Item
             label={
               <span className="text-[13px] font-semibold " style={{ color: primary }}>
-                Sexe
+                {t('admin.users.gender')}
               </span>
             }
             name="sexe"
@@ -232,11 +236,10 @@ export default function AddUserModal({ isOpen, onClose }) {
           >
             <Select
               size="large"
-              placeholder="Sélectionner"
               className="rounded-lg"
             >
-              <Option value="HOMME">Homme</Option>
-              <Option value="FEMME">Femme</Option>
+              <Option value="HOMME">{t('admin.users.male')}</Option>
+              <Option value="FEMME">{t('admin.users.female')}</Option>
             </Select>
           </Form.Item>
         </div>
@@ -245,7 +248,7 @@ export default function AddUserModal({ isOpen, onClose }) {
         <Form.Item
           label={
             <span className="text-[13px] font-semibold " style={{ color: primary }}>
-              Date de naissance
+              {t('admin.messages.date')}
             </span>
           }
           name="dateNaissance"
@@ -259,62 +262,19 @@ export default function AddUserModal({ isOpen, onClose }) {
           />
         </Form.Item>
 
-        {/* Mot de passe */}
-        <div className="flex gap-4">
-          <Form.Item
-            label={
-              <span className="text-[13px] font-semibold " style={{ color: primary }}>
-                Mot de passe
-              </span>
-            }
-            name="password"
-            rules={[
-              { required: true, message: "Requis" },
-              { min: 8, message: "8 caractères minimum" },
-            ]}
-            className="flex-1"
-          >
-            <Input.Password
-              size="large"
-              placeholder="Minimum 8 caractères"
-              className="rounded-lg"
-            />
-          </Form.Item>
-          <Form.Item
-            label={
-              <span className="text-[13px] font-semibold " style={{ color: primary }}>
-                Confirmer le mot de passe
-              </span>
-            }
-            name="confirmPassword"
-            dependencies={["password"]}
-            rules={[
-              { required: true, message: "Requis" },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue("password") === value)
-                    return Promise.resolve();
-                  return Promise.reject(
-                    new Error("Les mots de passe ne correspondent pas !"),
-                  );
-                },
-              }),
-            ]}
-            className="flex-1"
-          >
-            <Input.Password
-              size="large"
-              placeholder="Retaper le mot de passe"
-              className="rounded-lg"
-            />
-          </Form.Item>
+        {/* Pas de mot de passe : le manager le choisira lui-même via son invitation */}
+        <div
+          className="rounded-lg text-[12px] px-4 py-3"
+          style={{ background: isDark ? "rgba(56,189,248,0.08)" : "#EFF6FF", color: textSub }}
+        >
+          {t("admin.users.invite.formHint")}
         </div>
 
         <Divider className="my-5" />
 
         <div className="flex justify-end gap-3">
           <Button size="large" onClick={onClose} className="rounded-lg px-6">
-            Annuler
+            {t('admin.users.cancel')}
           </Button>
           <Button
             size="large"
@@ -325,10 +285,11 @@ export default function AddUserModal({ isOpen, onClose }) {
             style={{ background: primary, borderColor: primary }}
             className="rounded-lg px-6"
           >
-            Créer le Manager
+            {t('admin.users.invite.btn')}
           </Button>
         </div>
       </Form>
     </Modal>
+    </>
   );
 }

@@ -13,11 +13,12 @@ import {
 import ProjectStatusToggle from "./Admin/Projects/ProjectStatusToggle";
 import { StatusTag } from "./Admin/Projects/AdminProjects";
 import { selectIsAuthenticated } from "../store/authSlice";
+import { BASE_URL } from "../services/constants";
 
 //
 // Images : le backend stocke "/api/uploads/..." → URL complète = HOST + path
 //
-const BASE_HOST = "http://localhost:8080";
+const BASE_HOST = BASE_URL.replace(/\/api$/, "");
 
 function getImageUrl(img) {
   if (!img) return null;

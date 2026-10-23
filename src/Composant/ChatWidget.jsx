@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CloseOutlined,
   SendOutlined,
@@ -25,8 +26,13 @@ import {
   useRequestAdminTransferMutation,
   useGetChatHistoryQuery,
 } from '../services/api/chatApi'
+import { BASE_URL } from '../services/constants'
+import { playChime } from '../services/chatAlerts'
 
-export default function ChatWidget({ t, currentLang, onNavigate }) {
+export default function ChatWidget({ t, currentLang }) {
+  const navigate = useNavigate()
+  // Textes du widget : anglais si le site est en anglais, français sinon
+  const L = (en, fr) => (currentLang === 'EN' ? en : fr)
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
@@ -51,13 +57,55 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
   // API Hooks
   const [startChat] = useStartChatMutation()
   const [sendMessageApi] = useSendMessageMutation()
-  const [requestAdmin] = useRequestAdminTransferMutation()
+  const [requestAdmin, { isLoading: requestingAdmin }] = useRequestAdminTransferMutation()
+  // Verrou contre les doubles clics (l'état React ne se met pas à jour assez vite entre deux clics)
+  const requestingRef = useRef(false)
 
-  // Polling history – active only when session exists and in admin mode
-  const { data: historyData, refetch } = useGetChatHistoryQuery(sessionToken, {
+  // Temps réel : le serveur signale chaque nouveau message (Server-Sent Events) et l'historique
+  // est rechargé aussitôt. Si le flux est coupé, on revient à une actualisation régulière.
+  const [streamOpen, setStreamOpen] = useState(false)
+  const isClosedSession = sessionStatus === 'CLOSED'
+  const withTeam = sessionStatus === 'WAITING_ADMIN' || sessionStatus === 'WITH_ADMIN'
+  const pollingInterval = isClosedSession ? 0 : streamOpen ? 60000 : withTeam ? 5000 : open ? 15000 : 0
+  const { data: historyData, error: historyError, refetch } = useGetChatHistoryQuery(sessionToken, {
     skip: !sessionToken,
-    pollingInterval: (sessionStatus === 'WAITING_ADMIN' || sessionStatus === 'WITH_ADMIN') ? 5000 : 0,
+    pollingInterval,
+    skipPollingIfUnfocused: true,
   })
+  const refetchRef = useRef(refetch)
+  refetchRef.current = refetch
+
+  useEffect(() => {
+    if (!sessionToken || isClosedSession || typeof EventSource === 'undefined') return undefined
+    const source = new EventSource(`${BASE_URL}/chat/stream/${encodeURIComponent(sessionToken)}`)
+    source.addEventListener('open', () => setStreamOpen(true))
+    source.addEventListener('chat', () => refetchRef.current?.())
+    source.addEventListener('error', () => setStreamOpen(source.readyState === EventSource.OPEN))
+    return () => {
+      source.close()
+      setStreamOpen(false)
+    }
+  }, [sessionToken, isClosedSession])
+
+  // ── Reset session (nouvelle conversation) ──────────────────────
+  const resetSession = useCallback(() => {
+    localStorage.removeItem('chatSessionToken')
+    localStorage.removeItem('chatVisitorName')
+    setSessionToken(null)
+    setSessionStatus(null)
+    setSessionVisitorName('')
+    setVisitorName('')
+    setVisitorEmail('')
+    setShowIntakeForm(true)
+    setTimeout(() => nameInputRef.current?.focus(), 350)
+  }, [])
+
+  // Jeton inconnu du serveur (session supprimée, base réinitialisée) : on l'oublie et on repart à zéro
+  useEffect(() => {
+    if (historyError?.status === 400 && /introuvable/i.test(historyError?.data?.message || '')) {
+      resetSession()
+    }
+  }, [historyError, resetSession])
 
   // When widget opens: show intake form if no session yet, else go straight to chat
   useEffect(() => {
@@ -86,6 +134,25 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
   }, [historyData, typing, showTransferPrompt])
 
   const messages = historyData?.data?.messages || []
+
+  // Réponses (bot ou conseiller) arrivées pendant que le widget est fermé : pastille + son pour un conseiller
+  const replies = messages.filter((m) => m.senderType !== 'VISITOR')
+  const seenReplies = useRef(null)
+  const [unseen, setUnseen] = useState(0)
+  useEffect(() => {
+    if (!historyData) return
+    if (seenReplies.current === null || open) {
+      seenReplies.current = replies.length
+      setUnseen(0)
+      return
+    }
+    const fresh = replies.slice(seenReplies.current)
+    if (fresh.length > 0) {
+      seenReplies.current = replies.length
+      setUnseen((n) => n + fresh.length)
+      if (fresh.some((m) => m.senderType === 'ADMIN')) playChime('message')
+    }
+  }, [historyData, open, replies])
   const assignedAdmin = historyData?.data?.assignedAdminName || null
   const isClosed = sessionStatus === 'CLOSED'
   const isWaiting = sessionStatus === 'WAITING_ADMIN'
@@ -94,7 +161,7 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
   // ── Start session after form submit ──────────────────────────────
   const handleStartSession = async () => {
     if (!visitorName.trim()) {
-      setNameError(currentLang === 'EN' ? 'Please enter your name.' : 'Veuillez entrer votre nom.')
+      setNameError(L('Please enter your name.', 'Veuillez entrer votre nom.'))
       return
     }
     setNameError('')
@@ -103,6 +170,7 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
       const res = await startChat({
         visitorName: visitorName.trim(),
         visitorEmail: visitorEmail.trim() || null,
+        language: (currentLang || 'FR').toLowerCase(),
       }).unwrap()
       if (res?.data?.sessionToken) {
         setSessionToken(res.data.sessionToken)
@@ -114,7 +182,7 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
         setTimeout(() => inputRef.current?.focus(), 150)
       }
     } catch (err) {
-      antMessage.error('Impossible de démarrer le chat. Réessayez.')
+      antMessage.error(L('Unable to start the chat. Please try again.', 'Impossible de démarrer le chat. Réessayez.'))
     } finally {
       setIsStarting(false)
     }
@@ -130,22 +198,32 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
       const res = await sendMessageApi({ sessionToken, message: text.trim() }).unwrap()
       if (res?.data?.showAdminTransfer) setShowTransferPrompt(true)
       refetch()
-    } catch {
-      antMessage.error("Erreur lors de l'envoi du message.")
+    } catch (err) {
+      // Conversation clôturée entre-temps : on affiche l'état à jour au lieu d'une erreur
+      if (err?.status === 409) {
+        refetch()
+        return
+      }
+      antMessage.error(L('Error while sending the message.', "Erreur lors de l'envoi du message."))
     } finally {
       setTyping(false)
     }
   }
 
   const handleRequestAdmin = async () => {
-    if (!sessionToken) return
+    if (!sessionToken || requestingRef.current) return
+    requestingRef.current = true
+    // La proposition disparaît tout de suite : un seul clic compte
+    setShowTransferPrompt(false)
     try {
-      await requestAdmin(sessionToken).unwrap()
-      setShowTransferPrompt(false)
-      antMessage.success('Un conseiller a été notifié et vous répondra sous peu.')
+      const res = await requestAdmin(sessionToken).unwrap()
+      if (res?.data?.status) setSessionStatus(res.data.status)
       refetch()
     } catch {
-      antMessage.error('Erreur lors de la demande de transfert.')
+      setShowTransferPrompt(true)
+      antMessage.error(L('Error while contacting an advisor.', 'Erreur lors de la demande de transfert.'))
+    } finally {
+      requestingRef.current = false
     }
   }
 
@@ -167,23 +245,17 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
     })
   }
 
-  // ── Reset session (nouvelle conversation) ──────────────────────
-  const resetSession = () => {
-    localStorage.removeItem('chatSessionToken')
-    localStorage.removeItem('chatVisitorName')
-    setSessionToken(null)
-    setSessionStatus(null)
-    setSessionVisitorName('')
-    setVisitorName('')
-    setVisitorEmail('')
-    setShowIntakeForm(true)
-    setTimeout(() => nameInputRef.current?.focus(), 350)
-  }
 
+
+  // Le widget est clair : on n'hérite pas du thème sombre du site public (App.jsx),
+  // sinon les boutons secondaires (« Non merci »…) s'affichent en noir sur fond sombre.
   const chatTheme = {
+    inherit: false,
     algorithm: theme.defaultAlgorithm,
     token: {
       colorPrimary: '#023B6A',
+      colorTextBase: '#1e293b',
+      colorBgBase: '#ffffff',
       borderRadius: 12,
       fontFamily: "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     },
@@ -225,7 +297,12 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
           style={{ transitionTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)' }}
         >
           {open ? <CloseOutlined /> : <WechatOutlined />}
-          {!open && (
+          {!open && unseen > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-red-500 text-white text-[11px] font-bold rounded-full border-2 border-white flex items-center justify-center">
+              {unseen}
+            </span>
+          )}
+          {!open && unseen === 0 && (
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white animate-pulse" />
           )}
         </button>
@@ -244,17 +321,17 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-white font-bold text-[15px] leading-tight">
-                {isWithAdmin && assignedAdmin ? assignedAdmin : 'COMPULEC Support'}
+                {isWithAdmin && assignedAdmin ? `${assignedAdmin} · COMPULEC` : 'COMPULEC Support'}
               </div>
               <div className="flex items-center gap-1.5 mt-1">
                 {isClosed
                   ? <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
                   : <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" />}
                 <span className="text-xs text-white/75">
-                  {isClosed ? 'Session terminée'
-                    : isWithAdmin ? `Conseiller connecté`
-                    : isWaiting ? 'Connexion en cours...'
-                    : 'Bot en ligne'}
+                  {isClosed ? L('Conversation closed', 'Conversation terminée')
+                    : isWithAdmin ? L('Advisor online', 'Conseiller en ligne')
+                    : isWaiting ? L('Connecting you to an advisor…', 'Mise en relation avec un conseiller…')
+                    : L('Assistant online', 'Assistant en ligne')}
                 </span>
               </div>
             </div>
@@ -362,16 +439,14 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
                 <div className="px-4 py-2 bg-[#023B6A]/5 border-b border-[#023B6A]/10 flex items-center gap-2 shrink-0">
                   <Avatar size={22} icon={<UserOutlined />} className="bg-[#023B6A] shrink-0" />
                   <span className="text-[12px] text-slate-600 font-medium">
-                    {sessionVisitorName || 'Visiteur Anonyme'}
+                    {sessionVisitorName || L('Anonymous visitor', 'Visiteur anonyme')}
                   </span>
-                  {!isClosed && (
-                    <button
-                      onClick={resetSession}
-                      className="ml-auto text-[11px] text-slate-400 hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer underline underline-offset-2"
-                    >
-                      {currentLang === 'EN' ? 'New session' : 'Nouvelle session'}
-                    </button>
-                  )}
+                  <button
+                    onClick={resetSession}
+                    className="ml-auto text-[11px] text-slate-400 hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer underline underline-offset-2"
+                  >
+                    {L('New conversation', 'Nouvelle conversation')}
+                  </button>
                 </div>
               )}
 
@@ -412,7 +487,7 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
                       >
                         <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
                         <div className={`text-[10px] mt-1 opacity-60 ${isVisitor ? 'text-right text-white/80' : 'text-left text-slate-300'}`}>
-                          {isAdmin ? 'Conseiller' : isBot ? 'Bot' : ''} {formatTime(msg.createdAt)}
+                          {isAdmin ? (msg.authorName || L('Advisor', 'Conseiller')) : isBot ? L('Assistant', 'Assistant') : ''} {formatTime(msg.createdAt)}
                         </div>
                       </div>
                       {isVisitor && (
@@ -435,7 +510,7 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
                 )}
 
                 {/* Transfer Prompt */}
-                {showTransferPrompt && !isClosed && (
+                {showTransferPrompt && !isClosed && !isWaiting && !isWithAdmin && (
                   <div className="mt-2 p-3 border border-amber-200 bg-amber-50 rounded-xl shadow-sm">
                     <div className="text-[13px] text-amber-900 mb-2 font-medium">
                       {currentLang === 'EN'
@@ -443,10 +518,14 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
                         : 'Souhaitez-vous être mis en relation avec un conseiller COMPULEC ?'}
                     </div>
                     <div className="flex gap-2">
-                      <Button size="small" type="primary" onClick={handleRequestAdmin} style={{ background: '#d97706', borderColor: '#d97706' }}>
+                      <Button size="small" type="primary" onClick={handleRequestAdmin} loading={requestingAdmin} disabled={requestingAdmin} style={{ background: '#d97706', borderColor: '#d97706' }}>
                         {currentLang === 'EN' ? 'Yes, connect me' : 'Oui, contacter un humain'}
                       </Button>
-                      <Button size="small" onClick={() => setShowTransferPrompt(false)}>
+                      <Button
+                        size="small"
+                        onClick={() => setShowTransferPrompt(false)}
+                        style={{ background: '#ffffff', borderColor: '#fcd34d', color: '#92400e' }}
+                      >
                         {currentLang === 'EN' ? 'No thanks' : 'Non merci'}
                       </Button>
                     </div>
@@ -486,36 +565,47 @@ export default function ChatWidget({ t, currentLang, onNavigate }) {
                 </div>
               )}
 
+              {/* Conversation terminée : on propose d'en démarrer une nouvelle */}
+              {isClosed && (
+                <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex flex-col items-center gap-2 shrink-0">
+                  <span className="text-[12px] text-slate-500">
+                    {L('This conversation is closed.', 'Cette conversation est terminée.')}
+                  </span>
+                  <Button type="primary" onClick={resetSession} style={{ background: '#023B6A', borderColor: '#023B6A' }}>
+                    {L('Start a new conversation', 'Démarrer une nouvelle conversation')}
+                  </Button>
+                </div>
+              )}
+
               {/* Input Area */}
+              {!isClosed && (
               <div className="px-3.5 py-3 border-t border-slate-200 bg-white flex items-center gap-2.5 shrink-0">
                 <Input
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={isClosed || !sessionToken}
-                  placeholder={
-                    isClosed
-                      ? (currentLang === 'EN' ? 'Session closed.' : 'Session fermée.')
-                      : (currentLang === 'EN' ? 'Type your message...' : 'Écrivez votre message...')
-                  }
+                  disabled={!sessionToken}
+                  maxLength={2000}
+                  placeholder={L('Type your message...', 'Écrivez votre message...')}
                   className="flex-1 rounded-xl text-[13px]"
                 />
                 <Button
                   type="primary"
                   icon={<SendOutlined />}
                   onClick={() => sendMessage(input)}
-                  disabled={!input.trim() || isClosed || !sessionToken}
+                  disabled={!input.trim() || !sessionToken}
                   className={`rounded-xl h-9 w-9 p-0 flex items-center justify-center shrink-0 border-none ${
-                    input.trim() && !isClosed && sessionToken ? 'bg-gradient-to-br from-[#023B6A] to-[#0a5fa8]' : ''
+                    input.trim() && sessionToken ? 'bg-gradient-to-br from-[#023B6A] to-[#0a5fa8]' : ''
                   }`}
                 />
               </div>
+              )}
 
               {/* Footer */}
               <div className="px-4 py-2 text-center bg-white border-t border-slate-50 rounded-b-2xl shrink-0">
                 <button
-                  onClick={() => { setOpen(false); if (onNavigate) onNavigate('contact') }}
+                  onClick={() => { setOpen(false); navigate('/contact') }}
                   className="bg-transparent border-none text-[12px] text-[#023B6A] cursor-pointer font-semibold underline underline-offset-2 hover:text-[#0a5fa8] transition-colors"
                 >
                   {currentLang === 'EN' ? 'Go to contact page' : 'Aller à la page de contact'}

@@ -1,11 +1,24 @@
 import React from 'react';
 import { Skeleton } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useAdminTheme } from '../AdminThemeContext';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { useGetInteractionChartDataQuery } from '../../../services/api/dashboardApi';
+import WidgetError from './WidgetError';
+import { formatChartMonth } from './dashboardFormat';
+import {
+  useGetInteractionChartDataQuery,
+  DASHBOARD_QUERY_OPTIONS,
+} from '../../../services/api/dashboardApi';
+
+const SERIES = [
+  { key: 'messages', color: '#059669' },
+  { key: 'chats',    color: '#6C5CE7' },
+  { key: 'projects', color: '#F59E0B' },
+  { key: 'articles', color: '#DB2777' },
+];
 
 const CustomTooltip = ({ active, payload, label, isDark }) => {
   if (active && payload && payload.length) {
@@ -32,6 +45,7 @@ const CustomTooltip = ({ active, payload, label, isDark }) => {
 
 export default function WebsiteVisitChart() {
   const isDark = useAdminTheme();
+  const { t, i18n } = useTranslation();
   const bgCard  = isDark ? '#1E293B' : '#fff';
   const border  = isDark ? '#334155' : '#EEF2F7';
   const textMain = isDark ? '#F8FAFC' : '#0F172A';
@@ -40,8 +54,13 @@ export default function WebsiteVisitChart() {
   const tickColor = isDark ? '#64748B' : '#94A3B8';
   const legendColor = isDark ? '#94A3B8' : '#475569';
 
-  const { data, isLoading } = useGetInteractionChartDataQuery();
-  const chartData = data?.data ?? [];
+  const { data, isLoading, isError, refetch } = useGetInteractionChartDataQuery(undefined, DASHBOARD_QUERY_OPTIONS);
+  const chartData = React.useMemo(
+    () => (data?.data ?? []).map((point) => ({ ...point, label: formatChartMonth(point.month, i18n.language) })),
+    [data, i18n.language],
+  );
+  // Le backend renvoie toujours 6 mois : "vide" = tous les compteurs à 0
+  const hasData = chartData.some((p) => SERIES.some((s) => p[s.key] > 0));
 
   if (isLoading) {
     return (
@@ -74,49 +93,50 @@ export default function WebsiteVisitChart() {
       >
         <div>
           <h3 style={{ fontWeight: 800, fontSize: 18, color: textMain, margin: '0 0 4px' }}>
-            Platform Interactions
+            {t('admin.dashboard.platformInteractions')}
           </h3>
           <p style={{ fontSize: 13, color: textSub, margin: 0 }}>
-            Messages, AI Chats, Projects &amp; Articles over time
+            {t('admin.dashboard.interactionsSubtitle')}
           </p>
         </div>
       </div>
 
       <div style={{ flex: 1, padding: '24px 24px 24px 0', minHeight: 0 }}>
-        {chartData.length === 0 ? (
-          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8' }}>
-            No data available.
+        {isError ? (
+          <WidgetError onRetry={refetch} />
+        ) : !hasData ? (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', fontSize: 13 }}>
+            {t('admin.dashboard.noChartData')}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorMessages" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#059669" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#059669" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorChats" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#6C5CE7" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#6C5CE7" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorProjects" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#F59E0B" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorArticles" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#DB2777" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#DB2777" stopOpacity={0} />
-                </linearGradient>
+                {SERIES.map(({ key, color }) => (
+                  <linearGradient key={key} id={`dashboard-gradient-${key}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={color} stopOpacity={0} />
+                  </linearGradient>
+                ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 12 }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 12 }} dx={-10} />
+              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 12 }} dy={10} />
+              <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 12 }} dx={-10} />
               <Tooltip content={(props) => <CustomTooltip {...props} isDark={isDark} />} />
               <Legend iconType="circle" wrapperStyle={{ fontSize: 13, color: legendColor, paddingTop: 20 }} />
-              <Area type="monotone" dataKey="messages"  name="Messages" stroke="#059669" strokeWidth={3} fillOpacity={1} fill="url(#colorMessages)"  activeDot={{ r: 6, strokeWidth: 0, fill: '#059669' }} />
-              <Area type="monotone" dataKey="chats"     name="AI Chats" stroke="#6C5CE7" strokeWidth={3} fillOpacity={1} fill="url(#colorChats)"     activeDot={{ r: 6, strokeWidth: 0, fill: '#6C5CE7' }} />
-              <Area type="monotone" dataKey="projects"  name="Projects" stroke="#F59E0B" strokeWidth={3} fillOpacity={1} fill="url(#colorProjects)"  activeDot={{ r: 6, strokeWidth: 0, fill: '#F59E0B' }} />
-              <Area type="monotone" dataKey="articles"  name="Articles" stroke="#DB2777" strokeWidth={3} fillOpacity={1} fill="url(#colorArticles)"  activeDot={{ r: 6, strokeWidth: 0, fill: '#DB2777' }} />
+              {SERIES.map(({ key, color }) => (
+                <Area
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  name={t(`admin.dashboard.series.${key}`)}
+                  stroke={color}
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill={`url(#dashboard-gradient-${key})`}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: color }}
+                />
+              ))}
             </AreaChart>
           </ResponsiveContainer>
         )}

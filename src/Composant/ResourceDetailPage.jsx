@@ -5,9 +5,10 @@ import {
   useGetArticleByIdQuery,
   useGetArticlesPubliesQuery,
 } from "../services/api/newsApi";
+import { BASE_URL } from "../services/constants";
 
 //
-const BASE_IMG = "http://localhost:8080/api";
+const BASE_IMG = BASE_URL;
 
 function getImageUrl(img) {
   if (!img) return null;

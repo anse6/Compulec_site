@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAdminTheme } from "../AdminThemeContext";
 import {
   Table,
-  ConfigProvider,
   Input,
   Button,
   Segmented,
@@ -10,12 +10,11 @@ import {
   Select,
   Tag,
   Popconfirm,
-  Spin,
   Empty,
   message,
   Skeleton,
   Modal,
-  Space,
+  Grid,
 } from "antd";
 import {
   EyeOutlined,
@@ -41,8 +40,38 @@ import {
   useDepublierProjetMutation,
   useDeleteProjetMutation,
 } from "../../../services/api/projetApi";
+import { BASE_IMG } from "../../../config";
 
-const BASE_IMG = "http://localhost:8080/api";
+// Largeurs fixes des colonnes (scroll horizontal sur mobile / tablette)
+// TITRE 220 + CATEGORIE 180 + LOCALISATION 130 + STATUS 130 + VISIBILITE 120
+const BASE_COLUMNS_WIDTH = 220 + 180 + 130 + 130 + 120;
+const ACTION_WIDTH_DESKTOP = 250; // voir + modifier + (dé)publier avec texte + supprimer
+const ACTION_WIDTH_MOBILE = 170; // 4 boutons icône seule
+
+// CSS pour masquer la barre de scroll du tableau (le scroll reste actif)
+const hideScrollbarCss = `
+  .projects-table-wrap .ant-table-content,
+  .projects-table-wrap .ant-table-body,
+  .projects-table-wrap .ant-table-container {
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* IE / ancien Edge */
+    -webkit-overflow-scrolling: touch;
+  }
+  .projects-table-wrap .ant-table-content::-webkit-scrollbar,
+  .projects-table-wrap .ant-table-body::-webkit-scrollbar,
+  .projects-table-wrap .ant-table-container::-webkit-scrollbar {
+    display: none;                  /* Chrome, Safari, mobiles */
+    width: 0;
+    height: 0;
+  }
+`;
+
+// Style commun pour tronquer un texte avec des points de suspension
+const ellipsis = {
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
 
 // Helpers
 
@@ -106,6 +135,7 @@ export function StatusTag({ status }) {
         fontWeight: 600,
         fontSize: 11,
         margin: 0,
+        whiteSpace: "nowrap",
       }}
     >
       {cfg.label}
@@ -116,21 +146,19 @@ export function StatusTag({ status }) {
 //  VisibilityToggle — Modal Ant Design
 
 export function VisibilityToggle({ projetId, publie }) {
+  const isDark = useAdminTheme();
+  // (bug corrigé : textSub n'était pas défini dans ce composant)
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+
   const [publier, { isLoading: publishing }] = usePublierProjetMutation();
   const [depublier, { isLoading: unpublishing }] = useDepublierProjetMutation();
   const loading = publishing || unpublishing;
 
   const handleToggle = (e) => {
     e.stopPropagation();
-    const action = publie ? "dépublier" : "publier";
     const nextLabel = publie
       ? "Draft (non visible)"
       : "Published (visible sur le site)";
-    const icon = publie ? (
-      <p style={{ color: "var(--ant-color-warning)" }}> publier</p>
-    ) : (
-      <p style={{ color: "var(--ant-color-success)" }}> dépublier</p>
-    );
 
     Modal.confirm({
       title: (
@@ -228,6 +256,7 @@ export function VisibilityToggle({ projetId, publie }) {
         fontSize: 11,
         margin: 0,
         userSelect: "none",
+        whiteSpace: "nowrap",
       }}
     >
       {loading ? "Updating…" : cfg.label}
@@ -257,20 +286,23 @@ function DeleteButton({ projetId }) {
       cancelText="Annuler"
       okButtonProps={{ danger: true, loading: isLoading }}
       onConfirm={handleDelete}
+      placement="topRight"
     >
       <Button
         type="text"
         danger
         icon={<DeleteOutlined />}
         loading={isLoading}
+        title="Supprimer"
       />
     </Popconfirm>
   );
 }
 
 //  PublishButton — bouton dans la colonne Action
+//  Sur mobile : icône seule (le libellé serait trop large)
 
-function PublishButton({ projetId, publie }) {
+function PublishButton({ projetId, publie, isMobile }) {
   const [publier, { isLoading: publishing }] = usePublierProjetMutation();
   const [depublier, { isLoading: unpublishing }] = useDepublierProjetMutation();
   const loading = publishing || unpublishing;
@@ -348,12 +380,16 @@ function PublishButton({ projetId, publie }) {
       type="text"
       loading={loading}
       onClick={handleClick}
+      title={publie ? "Dépublier" : "Publier"}
+      icon={
+        isMobile ? publie ? <StopOutlined /> : <GlobalOutlined /> : undefined
+      }
       style={{
         color: publie ? "#d97706" : "#16a34a",
         fontWeight: 600,
       }}
     >
-      {publie ? "Dépublier" : "Publier"}
+      {!isMobile && (publie ? "Dépublier" : "Publier")}
     </Button>
   );
 }
@@ -373,14 +409,16 @@ const CATEGORIES = [
 
 export default function AdminProjects() {
   const isDark = useAdminTheme();
+  const { t } = useTranslation();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md; // < 768px
+
   // ── theme tokens ──────────────────────────────────────────────────────
-  const bg        = isDark ? "#0F172A" : "#ffffff";
-  const bgCard    = isDark ? "#1E293B" : "#ffffff";
-  const bgHover   = isDark ? "#334155" : "#F8FAFC";
-  const border    = isDark ? "#334155" : "#E2E8F0";
-  const textMain  = isDark ? "#F8FAFC" : "#0F172A";
-  const textSub   = isDark ? "#94A3B8" : "#64748B";
-  const primary   = isDark ? "#38bdf8" : "#023B6A";
+  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const border = isDark ? "#334155" : "#E2E8F0";
+  const textMain = isDark ? "#F8FAFC" : "#0F172A";
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+  const primary = isDark ? "#38bdf8" : "#023B6A";
 
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
@@ -426,7 +464,7 @@ export default function AdminProjects() {
     [projets, search, visibilityFilter, categoryFilter, statusFilter],
   );
 
-  //  Stats rapides
+  //  Stats rapides (utilisées par le bloc « Stats Cards » commenté plus bas)
   const publishedCount = projets.filter((p) => p.publie).length;
   const draftCount = projets.filter((p) => !p.publie).length;
 
@@ -443,40 +481,58 @@ export default function AdminProjects() {
     categoryFilter !== "all" ||
     statusFilter !== "all";
 
-  //  Colonnes table
+  // Largeur totale du tableau = somme des `width` des colonnes
+  const actionWidth = isMobile ? ACTION_WIDTH_MOBILE : ACTION_WIDTH_DESKTOP;
+  const tableMinWidth = BASE_COLUMNS_WIDTH + actionWidth;
+
+  //  Colonnes table — largeurs fixes pour le scroll horizontal
   const columns = [
     {
-      title: "PROJET",
+      title: t("admin.projects.title").toUpperCase(),
       dataIndex: "titre",
       key: "titre",
+      width: 220,
       render: (text, record) => (
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            minWidth: 0,
+          }}
+        >
           <img
             src={getImageUrl(record.images)}
             alt={text}
             style={{
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               borderRadius: 8,
               objectFit: "cover",
               border: `1px solid ${border}`,
               flexShrink: 0,
             }}
           />
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div
+              title={text}
               style={{
                 fontWeight: 700,
                 color: textMain,
                 fontSize: 13,
+                maxWidth: 140,
+                ...ellipsis,
               }}
             >
               {text}
             </div>
             <div
+              title={record.clientName || record.secteur || ""}
               style={{
                 fontSize: 11,
                 color: textSub,
+                maxWidth: 140,
+                ...ellipsis,
               }}
             >
               {record.clientName || record.secteur || "—"}
@@ -486,54 +542,70 @@ export default function AdminProjects() {
       ),
     },
     {
-      title: "CATÉGORIE",
+      title: t("admin.projects.category").toUpperCase(),
       dataIndex: "categorie",
       key: "categorie",
-      render: (t) => (
-        <span
+      width: 180,
+      render: (val) => (
+        <div
+          title={val}
           style={{
             color: textSub,
             fontWeight: 500,
             fontSize: 12,
+            maxWidth: 150,
+            ...ellipsis,
           }}
         >
-          {t || "—"}
-        </span>
+          {val || "—"}
+        </div>
       ),
     },
     {
-      title: "LOCALISATION",
+      title: t("admin.projects.location").toUpperCase(),
       dataIndex: "localisation",
       key: "localisation",
-      render: (t) => (
-        <span
-          style={{ color: textSub, fontSize: 12 }}
+      width: 130,
+      render: (val) => (
+        <div
+          title={val}
+          style={{
+            color: textSub,
+            fontSize: 12,
+            maxWidth: 100,
+            ...ellipsis,
+          }}
         >
-          {t || "—"}
-        </span>
+          {val || "—"}
+        </div>
       ),
     },
     {
-      title: "STATUS",
+      title: t("admin.projects.status").toUpperCase(),
       dataIndex: "status",
       key: "status",
+      width: 130,
       render: (status) => <StatusTag status={status || "Planned"} />,
     },
     {
-      title: "VISIBILITÉ",
+      title: t("admin.projects.visibility").toUpperCase(),
       key: "publie",
+      width: 120,
       render: (_, record) => (
         <VisibilityToggle projetId={record.id} publie={record.publie} />
       ),
     },
     {
-      title: "ACTION",
+      title: t("admin.projects.action").toUpperCase(),
       key: "action",
       align: "right",
+      fixed: "right", // reste visible pendant le scroll horizontal
+      width: actionWidth,
       render: (_, record) => (
         <div
           style={{
             display: "flex",
+            flexWrap: "nowrap", // une seule ligne : la largeur est fixe
             alignItems: "center",
             justifyContent: "flex-end",
             gap: 4,
@@ -553,7 +625,11 @@ export default function AdminProjects() {
             style={{ color: textSub }}
             title="Modifier"
           />
-          <PublishButton projetId={record.id} publie={record.publie} />
+          <PublishButton
+            projetId={record.id}
+            publie={record.publie}
+            isMobile={isMobile}
+          />
           <DeleteButton projetId={record.id} />
         </div>
       ),
@@ -566,29 +642,36 @@ export default function AdminProjects() {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 24,
+        gap: isMobile ? 16 : 24,
         paddingBottom: 40,
         fontFamily: "'Poppins', sans-serif",
+        width: "100%",
+        minWidth: 0,
       }}
     >
+      {/* CSS : barre de scroll invisible */}
+      <style>{hideScrollbarCss}</style>
+
       {/*  Header  */}
       <div
         style={{
           display: "flex",
+          flexDirection: isMobile ? "column" : "row",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: isMobile ? "stretch" : "flex-start",
+          gap: 12,
         }}
       >
-        <div>
+        <div style={{ minWidth: 0 }}>
           <h1
             style={{
-              fontSize: 26,
+              fontSize: isMobile ? 22 : 26,
               fontWeight: 800,
               color: textMain,
               margin: "0 0 4px",
             }}
           >
-            Projects &amp; Achievements
+            {t("admin.projects.title")}
           </h1>
           <p
             style={{
@@ -601,7 +684,8 @@ export default function AdminProjects() {
           </p>
         </div>
         <Button
-          size="large"
+          size={isMobile ? "middle" : "large"}
+          block={isMobile}
           onClick={() => navigate("/admin/projects/add")}
           style={{
             backgroundColor: primary,
@@ -609,67 +693,40 @@ export default function AdminProjects() {
             borderColor: primary,
             borderRadius: 10,
             fontWeight: 700,
+            flexShrink: 0,
           }}
         >
-          + Ajouter un projet
+          + {t("admin.projects.addProject")}
         </Button>
       </div>
 
-      {/* Stats Cards 
-        <div style={{ display: "flex", gap: 16 }}>
+      {/* Stats Cards (désactivé) — version responsive prête à réactiver :
+        <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? 10 : 16 }}>
           {[
-            {
-              label: "Total projets",
-              value: total,
-              bg: "#EFF6FF",
-              color: "#1d4ed8",
-            },
-            {
-              label: "Publiés",
-              value: publishedCount,
-              bg: "#F0FDF4",
-              color: "#16a34a",
-            },
-            {
-              label: "Brouillons",
-              value: draftCount,
-              bg: "#FFFBEB",
-              color: "#d97706",
-            },
-            {
-              label: "Filtrés",
-              value: filtered.length,
-              bg: "#F8FAFC",
-              color: textSub,
-            },
+            { label: "Total projets", value: total, bg: "#EFF6FF", color: "#1d4ed8" },
+            { label: "Publiés", value: publishedCount, bg: "#F0FDF4", color: "#16a34a" },
+            { label: "Brouillons", value: draftCount, bg: "#FFFBEB", color: "#d97706" },
+            { label: "Filtrés", value: filtered.length, bg: "#F8FAFC", color: textSub },
           ].map((s) => (
             <div
               key={s.label}
               style={{
-                flex: 1,
+                flex: isMobile ? "1 1 calc(50% - 10px)" : "1 1 0",
+                minWidth: 0,
                 background: s.bg,
                 borderRadius: 12,
-                padding: "14px 20px",
+                padding: isMobile ? "10px 14px" : "14px 20px",
                 border: `1px solid ${s.color}22`,
               }}
             >
-              <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>
-                {s.value}
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: textSub,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                }}
-              >
+              <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: textSub, textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 {s.label}
               </div>
             </div>
           ))}
-        </div> */}
+        </div>
+      */}
 
       {/*  Barre de filtres  */}
       <div
@@ -677,31 +734,35 @@ export default function AdminProjects() {
           backgroundColor: bgCard,
           border: `1px solid ${border}`,
           borderRadius: 14,
-          padding: "16px 20px",
+          padding: isMobile ? "12px 14px" : "14px 16px",
           display: "flex",
+          flexDirection: isMobile ? "column" : "row",
           flexWrap: "wrap",
-          alignItems: "center",
-          gap: 12,
+          alignItems: isMobile ? "stretch" : "center",
+          gap: 10,
           boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         }}
       >
         {/* Recherche */}
         <Input.Search
-          placeholder="Rechercher par titre, catégorie, client…"
+          placeholder="Rechercher…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           allowClear
-          style={{ width: 280 }}
+          style={
+            isMobile ? { width: "100%" } : { flex: "1 1 180px", minWidth: 140 }
+          }
           size="middle"
         />
 
         {/* Filtre visibilité */}
         <Segmented
+          block={isMobile}
           options={["All", "Published", "Draft"]}
           value={visibilityFilter}
           onChange={setVisibilityFilter}
           size="middle"
-          style={{ fontWeight: 600 }}
+          style={{ fontWeight: 600, flexShrink: 0 }}
         />
 
         {/* Filtre catégorie */}
@@ -709,9 +770,11 @@ export default function AdminProjects() {
           value={categoryFilter}
           onChange={setCategoryFilter}
           size="middle"
-          style={{ width: 230 }}
+          style={
+            isMobile ? { width: "100%" } : { flex: "1 1 160px", minWidth: 140 }
+          }
           options={[
-            { value: "all", label: "Toutes les catégories" },
+            { value: "all", label: "Toutes catégories" },
             ...CATEGORIES.map((c) => ({ value: c, label: c })),
           ]}
         />
@@ -721,9 +784,11 @@ export default function AdminProjects() {
           value={statusFilter}
           onChange={setStatusFilter}
           size="middle"
-          style={{ width: 160 }}
+          style={
+            isMobile ? { width: "100%" } : { flex: "1 1 130px", minWidth: 120 }
+          }
           options={[
-            { value: "all", label: "Tous les statuts" },
+            { value: "all", label: "Tous statuts" },
             { value: "Planned", label: "Planned" },
             { value: "In progress", label: "In Progress" },
             { value: "Completed", label: "Completed" },
@@ -732,20 +797,27 @@ export default function AdminProjects() {
         />
 
         {/* Boutons droite */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div
+          style={{
+            marginLeft: isMobile ? 0 : "auto",
+            display: "flex",
+            justifyContent: isMobile ? "flex-end" : "flex-start",
+            gap: 8,
+            flexShrink: 0,
+          }}
+        >
           {hasActiveFilters && (
             <Button
               icon={<FilterOutlined />}
               onClick={resetFilters}
               size="middle"
+              title="Réinitialiser les filtres"
               style={{
                 borderRadius: 8,
                 color: "var(--ant-color-error)",
                 borderColor: "#fecaca",
               }}
-            >
-              Réinitialiser
-            </Button>
+            />
           )}
           <Button
             icon={<ReloadOutlined />}
@@ -758,10 +830,7 @@ export default function AdminProjects() {
             size="middle"
             icon={view === "list" ? <AppstoreOutlined /> : <BarsOutlined />}
             onClick={() => setView(view === "list" ? "grid" : "list")}
-            style={{
-              color: textSub,
-              borderRadius: 8,
-            }}
+            style={{ color: textSub, borderRadius: 8 }}
             title={view === "list" ? "Vue grille" : "Vue liste"}
           />
         </div>
@@ -769,9 +838,7 @@ export default function AdminProjects() {
 
       {/*  Résultat filtre  */}
       {hasActiveFilters && (
-        <div
-          style={{ fontSize: 12, color: textSub }}
-        >
+        <div style={{ fontSize: 12, color: textSub }}>
           <FilterOutlined style={{ marginRight: 4 }} />
           {filtered.length} résultat{filtered.length > 1 ? "s" : ""} sur{" "}
           {projets.length} projets
@@ -799,16 +866,18 @@ export default function AdminProjects() {
       {/*  Contenu  */}
       {!isError && (
         <div
+          className="projects-table-wrap"
           style={{
             backgroundColor: bgCard,
             border: `1px solid ${border}`,
             borderRadius: 16,
-            overflow: "hidden",
             boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            // PAS de overflow:hidden en vue liste : il bloque le scroll horizontal
+            overflow: view === "list" ? "visible" : "hidden",
           }}
         >
           {isLoading ? (
-            <div style={{ padding: 32 }}>
+            <div style={{ padding: isMobile ? 16 : 32 }}>
               <Skeleton active paragraph={{ rows: 6 }} />
             </div>
           ) : view === "list" ? (
@@ -816,14 +885,18 @@ export default function AdminProjects() {
               columns={columns}
               dataSource={filtered}
               rowKey="id"
+              size={isMobile ? "small" : "middle"}
+              scroll={{ x: tableMinWidth }}
               locale={{
                 emptyText: <Empty description="Aucun projet trouvé" />,
               }}
               pagination={{
-                position: ["bottomRight"],
+                placement: ["bottomRight"],
                 pageSize: 10,
+                size: isMobile ? "small" : "default",
+                simple: isMobile,
                 showSizeChanger: false,
-                showTotal: (t) => `${t} projet${t > 1 ? "s" : ""}`,
+                showTotal: (total) => `${total} projet${total > 1 ? "s" : ""}`,
               }}
             />
           ) : (
@@ -831,9 +904,11 @@ export default function AdminProjects() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: 24,
-                padding: 24,
+                // min(300px, 100%) évite le débordement sur les petits écrans
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
+                gap: isMobile ? 16 : 24,
+                padding: isMobile ? 12 : 24,
               }}
             >
               {filtered.length === 0 && (
@@ -850,7 +925,7 @@ export default function AdminProjects() {
                     <div
                       style={{
                         position: "relative",
-                        height: 192,
+                        height: isMobile ? 160 : 192,
                         overflow: "hidden",
                       }}
                     >
@@ -868,7 +943,9 @@ export default function AdminProjects() {
                           position: "absolute",
                           top: 12,
                           left: 12,
+                          right: 12,
                           display: "flex",
+                          flexWrap: "wrap",
                           gap: 6,
                         }}
                       >
@@ -882,7 +959,7 @@ export default function AdminProjects() {
                   }
                   styles={{
                     body: {
-                      padding: 20,
+                      padding: isMobile ? 14 : 20,
                       display: "flex",
                       flexDirection: "column",
                     },
@@ -891,6 +968,7 @@ export default function AdminProjects() {
                     borderRadius: 16,
                     overflow: "hidden",
                     border: `1px solid ${border}`,
+                    minWidth: 0,
                   }}
                 >
                   <p
@@ -907,7 +985,7 @@ export default function AdminProjects() {
                   </p>
                   <h3
                     style={{
-                      fontSize: 15,
+                      fontSize: isMobile ? 14 : 15,
                       fontWeight: 700,
                       color: isDark ? "#38bdf8" : "#023B6A",
                       marginBottom: 8,
@@ -938,13 +1016,15 @@ export default function AdminProjects() {
                   <div
                     style={{
                       display: "flex",
+                      flexWrap: "wrap",
                       justifyContent: "space-between",
                       alignItems: "center",
+                      gap: 8,
                       borderTop: `1px solid ${border}`,
                       paddingTop: 16,
                     }}
                   >
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                       <Button
                         size="small"
                         icon={<EyeOutlined />}

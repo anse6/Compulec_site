@@ -70,6 +70,30 @@ const usersApi = baseApi.injectEndpoints({
       providesTags: [API_TAGS.USER],
     }),
 
+    // POST /api/users/{id}/invitation — nouveau lien + nouveau code
+    resendInvitation: builder.mutation({
+      query: (id) => ({ url: `/users/${id}/invitation`, method: 'POST' }),
+      invalidatesTags: [API_TAGS.USER],
+    }),
+
+    // GET /api/users/me/mfa — état de ma 2FA
+    getMyMfa: builder.query({
+      query: () => ({ url: `/users/me/mfa`, method: 'GET' }),
+      providesTags: [API_TAGS.USER],
+    }),
+
+    // POST /api/users/me/mfa/backup-codes — nouveaux codes de secours
+    regenerateBackupCodes: builder.mutation({
+      query: (code) => ({ url: `/users/me/mfa/backup-codes`, method: 'POST', body: { code } }),
+      invalidatesTags: [API_TAGS.USER],
+    }),
+
+    // PATCH /api/users/{id}/mfa/reset — téléphone perdu (admin)
+    resetUserMfa: builder.mutation({
+      query: (id) => ({ url: `/users/${id}/mfa/reset`, method: 'PATCH' }),
+      invalidatesTags: [API_TAGS.USER],
+    }),
+
     // PATCH /api/users/me/password
     changePassword: builder.mutation({
       query: (data) => ({
@@ -86,12 +110,16 @@ export const {
   useGetUserByIdQuery,
   useGetCurrentUserQuery,
   useCreateManagerMutation,
+  useResendInvitationMutation,
   useUpdateUserMutation,
   useUpdateUserRoleMutation,
   useActivateUserMutation,
   useDeactivateUserMutation,
   useDeleteUserMutation,
   useChangePasswordMutation,
+  useGetMyMfaQuery,
+  useRegenerateBackupCodesMutation,
+  useResetUserMfaMutation,
 } = usersApi;
 
 export default usersApi;

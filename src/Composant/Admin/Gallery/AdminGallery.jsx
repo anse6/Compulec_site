@@ -1,5 +1,5 @@
-import React from "react";
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useAdminTheme } from "../AdminThemeContext";
 import {
   Modal,
@@ -12,6 +12,7 @@ import {
   Spin,
   Popconfirm,
   Empty,
+  Grid,
 } from "antd";
 import {
   InboxOutlined,
@@ -20,8 +21,6 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 
-// Icons are now imported from @ant-design/icons
-
 import {
   useGetAllGalleriesQuery,
   useCreateGalleryMutation,
@@ -29,8 +28,7 @@ import {
   useDeleteGalleryMutation,
 } from "../../../services/api/galleryApi";
 import { useGetAllProjetsQuery } from "../../../services/api/projetApi";
-
-const BASE_IMG = "http://localhost:8080/api";
+import { BASE_IMG } from "../../../config";
 
 function getImageUrl(img) {
   if (!img) return null;
@@ -40,6 +38,10 @@ function getImageUrl(img) {
 
 export default function AdminGallery() {
   const isDark = useAdminTheme();
+  const { t } = useTranslation();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
+
   const bgCard = isDark ? "#1E293B" : "#ffffff";
   const border = isDark ? "#334155" : "#E2E8F0";
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
@@ -50,11 +52,14 @@ export default function AdminGallery() {
   const [modalMode, setModalMode] = useState("add"); // 'add' or 'edit'
   const [editingGalleryId, setEditingGalleryId] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [previewGallery, setPreviewGallery] = useState(null); // Which gallery's lightbox is open
-  const [previewImageIndex, setPreviewImageIndex] = useState(0); // Current image index in the open lightbox
+  const [previewGallery, setPreviewGallery] = useState(null);
+  const [previewImageIndex, setPreviewImageIndex] = useState(0);
   const [searchText, setSearchText] = useState("");
   const [selectedProjetId, setSelectedProjetId] = useState(null);
   const [form] = Form.useForm();
+
+  // Swipe (lightbox)
+  const touchStartX = useRef(null);
 
   const { data: galleriesResp, isLoading } = useGetAllGalleriesQuery();
   const { data: projetsResp, isLoading: loadingProjets } =
@@ -73,12 +78,11 @@ export default function AdminGallery() {
       result = result.filter((g) => g.projetId === selectedProjetId);
     }
     if (searchText) {
+      const q = searchText.toLowerCase();
       result = result.filter(
         (g) =>
-          (g.titre &&
-            g.titre.toLowerCase().includes(searchText.toLowerCase())) ||
-          (g.projetTitre &&
-            g.projetTitre.toLowerCase().includes(searchText.toLowerCase())),
+          (g.titre && g.titre.toLowerCase().includes(q)) ||
+          (g.projetTitre && g.projetTitre.toLowerCase().includes(q)),
       );
     }
     return result;
@@ -92,6 +96,17 @@ export default function AdminGallery() {
       });
     };
   }, [uploadedFiles]);
+
+  // Empêche le scroll de la page derrière la lightbox
+  useEffect(() => {
+    if (previewGallery) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [previewGallery]);
 
   const handleOpenModal = (mode, item = null) => {
     setModalMode(mode);
@@ -107,9 +122,9 @@ export default function AdminGallery() {
         id: `existing-${index}`,
         name: `Image ${index + 1}`,
         url: getImageUrl(img),
-        type: "image/jpeg", // Fallback type for preview
+        type: "image/jpeg",
         isExisting: true,
-        backendPath: img, // Store the original path
+        backendPath: img,
       }));
       setUploadedFiles(existingFiles);
     } else {
@@ -143,14 +158,14 @@ export default function AdminGallery() {
 
       if (modalMode === "add") {
         await createGallery(formData).unwrap();
-        message.success("Galerie créée avec succès !");
+        message.success(t("admin.gallery.createSuccess"));
       } else if (modalMode === "edit" && editingGalleryId) {
         await updateGallery({ id: editingGalleryId, formData }).unwrap();
-        message.success("Galerie mise à jour avec succès !");
+        message.success(t("admin.gallery.updateSuccess"));
       }
       handleCloseModal();
     } catch (err) {
-      message.error(err?.data?.message || "Erreur lors de la sauvegarde.");
+      message.error(err?.data?.message || t("admin.gallery.saveError"));
     }
   };
 
@@ -158,7 +173,7 @@ export default function AdminGallery() {
     const isImageOrVideo =
       file.type.startsWith("image/") || file.type.startsWith("video/");
     if (!isImageOrVideo) {
-      alert("You can only upload images or videos!");
+      message.error(t("admin.gallery.uploadError"));
       return Upload.LIST_IGNORE;
     }
 
@@ -171,7 +186,7 @@ export default function AdminGallery() {
     };
 
     setUploadedFiles((prev) => [...prev, newFile]);
-    return false; // Prevent auto-upload
+    return false;
   };
 
   const handleRemoveFile = (id) => {
@@ -185,8 +200,9 @@ export default function AdminGallery() {
     );
   };
 
-  const handleOpenPreview = (galleryIndex) => {
-    setPreviewGallery(galleries[galleryIndex]);
+  // ── Lightbox (on reçoit directement la galerie, pas l'index)
+  const handleOpenPreview = (gallery) => {
+    setPreviewGallery(gallery);
     setPreviewImageIndex(0);
   };
   const handleClosePreview = () => {
@@ -194,64 +210,101 @@ export default function AdminGallery() {
     setPreviewImageIndex(0);
   };
   const handlePrevPreview = () => {
-    if (previewImageIndex > 0) setPreviewImageIndex(previewImageIndex - 1);
+    if (previewImageIndex > 0) setPreviewImageIndex((i) => i - 1);
   };
   const handleNextPreview = () => {
     if (
       previewGallery &&
       previewImageIndex < previewGallery.images.length - 1
     ) {
-      setPreviewImageIndex(previewImageIndex + 1);
+      setPreviewImageIndex((i) => i + 1);
     }
+  };
+
+  const onTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const diff = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff < 0) handleNextPreview();
+      else handlePrevPreview();
+    }
+    touchStartX.current = null;
   };
 
   const gridActionBtnStyle = {
     backgroundColor: bgCard,
     border: `1px solid ${border}`,
     borderRadius: 6,
-    padding: "6px 12px",
+    padding: isMobile ? "8px 10px" : "6px 12px",
     fontSize: 13,
     fontWeight: 600,
     color: textSub,
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
     transition: "all 0.2s",
+    flex: isMobile ? 1 : undefined,
   };
+
+  const isFirst = previewImageIndex === 0;
+  const isLast =
+    previewGallery && previewImageIndex === previewGallery.images.length - 1;
+
+  const navBtnStyle = (disabled) => ({
+    width: isMobile ? 52 : 44,
+    height: isMobile ? 52 : 44,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    border: "none",
+    cursor: disabled ? "not-allowed" : "pointer",
+    background: disabled ? "#475569" : "#2563EB",
+    color: disabled ? "#94A3B8" : "#fff",
+    transition: "all 0.2s",
+  });
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 24,
+        gap: isMobile ? 16 : 24,
         paddingBottom: 40,
         fontFamily: "'Poppins', sans-serif",
+        width: "100%",
+        overflowX: "hidden",
       }}
     >
       {/* Header */}
       <div
         style={{
           display: "flex",
+          flexDirection: isMobile ? "column" : "row",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: isMobile ? "stretch" : "flex-start",
+          gap: 16,
         }}
       >
-        <div>
+        <div style={{ minWidth: 0 }}>
           <h1
             style={{
               fontWeight: 800,
-              fontSize: 26,
+              fontSize: isMobile ? 22 : 26,
               color: textMain,
               margin: "0 0 6px",
               letterSpacing: "-0.3px",
             }}
           >
-            Gallery
+            {t("admin.gallery.title")}
           </h1>
           <p style={{ fontSize: 13, color: textSub, margin: 0 }}>
-            Manage general images used across the COMPULEC website.
+            {t("admin.gallery.subtitle")}
           </p>
         </div>
         <button
@@ -260,22 +313,25 @@ export default function AdminGallery() {
             padding: "10px 22px",
             border: "none",
             borderRadius: 10,
-            backgroundColor: typeof primary !== "undefined" ? primary : "var(--ant-color-primary, #023B6A)",
+            backgroundColor: primary,
             color: "#ffffff",
             fontWeight: 700,
             fontSize: 13,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
+            justifyContent: "center",
             gap: 6,
             boxShadow: "0 2px 10px rgba(2,59,106,0.25)",
             transition: "background 0.15s",
+            width: isMobile ? "100%" : "auto",
+            flexShrink: 0,
           }}
         >
           <span style={{ fontSize: 16, fontWeight: 800, lineHeight: 1 }}>
             +
           </span>
-          Add Images/Videos
+          {t("admin.gallery.addImages")}
         </button>
       </div>
 
@@ -283,15 +339,15 @@ export default function AdminGallery() {
       <div
         style={{
           display: "flex",
-          gap: 16,
-          marginBottom: 16,
-          alignItems: "center",
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? 12 : 16,
+          alignItems: isMobile ? "stretch" : "center",
           flexWrap: "wrap",
         }}
       >
-        <div style={{ position: "relative", width: 320 }}>
+        <div style={{ width: isMobile ? "100%" : 320 }}>
           <Input.Search
-            placeholder="Rechercher par titre ou projet..."
+            placeholder={t("admin.gallery.searchPlaceholder")}
             allowClear
             size="large"
             onChange={(e) => setSearchText(e.target.value)}
@@ -302,8 +358,8 @@ export default function AdminGallery() {
         <Select
           size="large"
           allowClear
-          placeholder="Filtrer par projet"
-          style={{ width: 250 }}
+          placeholder={t("admin.gallery.filterProject")}
+          style={{ width: isMobile ? "100%" : 250 }}
           loading={loadingProjets}
           value={selectedProjetId}
           onChange={(value) => setSelectedProjetId(value)}
@@ -317,15 +373,17 @@ export default function AdminGallery() {
           <div
             style={{
               backgroundColor: bgCard,
-              padding: 60,
+              padding: isMobile ? 32 : 60,
               borderRadius: 12,
               border: `1px solid ${border}`,
-              marginTop: 20,
+              marginTop: isMobile ? 0 : 20,
             }}
           >
             <Empty
               description={
-                <span style={{ color: textSub }}>Aucune galerie trouvée</span>
+                <span style={{ color: textSub }}>
+                  {t("admin.gallery.noGalleryFound")}
+                </span>
               }
             />
           </div>
@@ -333,11 +391,12 @@ export default function AdminGallery() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-              gap: 24,
+              gridTemplateColumns:
+                "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
+              gap: isMobile ? 16 : 24,
             }}
           >
-            {filteredGalleries.map((item, index) => {
+            {filteredGalleries.map((item) => {
               const coverImage =
                 item.images && item.images.length > 0
                   ? getImageUrl(item.images[0])
@@ -352,13 +411,14 @@ export default function AdminGallery() {
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",
+                    minWidth: 0,
                   }}
                 >
                   {/* Image Thumbnail */}
                   <div
                     style={{
                       width: "100%",
-                      height: 220,
+                      height: isMobile ? 180 : 220,
                       overflow: "hidden",
                       position: "relative",
                     }}
@@ -370,6 +430,7 @@ export default function AdminGallery() {
                         width: "100%",
                         height: "100%",
                         objectFit: "cover",
+                        display: "block",
                       }}
                     />
                     <div
@@ -385,30 +446,33 @@ export default function AdminGallery() {
                         fontWeight: 600,
                       }}
                     >
-                      {item.images?.length || 0} image(s)
+                      {item.images?.length || 0}{" "}
+                      {t("admin.gallery.imagesCount")}
                     </div>
                   </div>
 
                   {/* Title & Actions */}
-                  <div style={{ padding: 20 }}>
+                  <div style={{ padding: isMobile ? 16 : 20 }}>
                     <h3
                       style={{
                         fontSize: 15,
                         fontWeight: 700,
                         color: primary,
                         margin: "0 0 4px",
+                        wordBreak: "break-word",
                       }}
                     >
-                      {item.titre || "Galerie sans titre"}
+                      {item.titre || t("admin.gallery.untitledGallery")}
                     </h3>
                     <p
                       style={{
                         fontSize: 12,
                         color: textSub,
                         margin: "0 0 16px",
+                        wordBreak: "break-word",
                       }}
                     >
-                      Projet : {item.projetTitre}
+                      {t("admin.gallery.projectLabel")} {item.projetTitre}
                     </p>
 
                     <div
@@ -416,38 +480,48 @@ export default function AdminGallery() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
+                        gap: 8,
                       }}
                     >
-                      <div style={{ display: "flex", gap: 12 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: isMobile ? 8 : 12,
+                          flex: 1,
+                          minWidth: 0,
+                          flexWrap: "wrap",
+                        }}
+                      >
                         <button
                           style={gridActionBtnStyle}
-                          onClick={() => handleOpenPreview(index)}
+                          onClick={() => handleOpenPreview(item)}
                         >
-                          <EyeOutlined /> Preview
+                          <EyeOutlined /> {t("admin.gallery.preview")}
                         </button>
                         <button
                           style={gridActionBtnStyle}
                           onClick={() => handleOpenModal("edit", item)}
                         >
-                          <EditOutlined /> Edit
+                          <EditOutlined /> {t("admin.gallery.edit")}
                         </button>
                       </div>
                       <Popconfirm
-                        title="Supprimer cette galerie ?"
+                        title={t("admin.gallery.deleteConfirm")}
                         onConfirm={() => deleteGallery(item.id)}
-                        okText="Oui"
-                        cancelText="Non"
+                        okText={t("admin.common.yes")}
+                        cancelText={t("admin.common.no")}
                       >
                         <button
                           style={{
                             background: "none",
                             border: "none",
                             cursor: "pointer",
-                            padding: 4,
+                            padding: 8,
                             color: "var(--ant-color-error)",
+                            flexShrink: 0,
                           }}
                         >
-                          <DeleteOutlined style={{ fontSize: 16 }} />
+                          <DeleteOutlined style={{ fontSize: 18 }} />
                         </button>
                       </Popconfirm>
                     </div>
@@ -462,8 +536,16 @@ export default function AdminGallery() {
       {/* Add / Edit Modal */}
       <Modal
         title={
-          <div style={{ fontWeight: 800, color: primary, fontSize: 18 }}>
-            {modalMode === "edit" ? "Edit Image/Video" : "Add Images/Videos"}
+          <div
+            style={{
+              fontWeight: 800,
+              color: primary,
+              fontSize: isMobile ? 16 : 18,
+            }}
+          >
+            {modalMode === "edit"
+              ? t("admin.gallery.editModalTitle")
+              : t("admin.gallery.addModalTitle")}
             <p
               style={{
                 fontWeight: 400,
@@ -472,14 +554,15 @@ export default function AdminGallery() {
                 margin: "4px 0 0",
               }}
             >
-              Upload a photograph or video
+              {t("admin.gallery.uploadDesc")}
             </p>
           </div>
         }
         open={isModalOpen}
         onCancel={handleCloseModal}
         footer={null}
-        width={600}
+        width={isMobile ? "calc(100vw - 24px)" : 600}
+        centered={isMobile}
         closeIcon={
           <span style={{ color: primary, fontSize: 18, fontWeight: "bold" }}>
             ✕
@@ -487,10 +570,14 @@ export default function AdminGallery() {
         }
         styles={{
           header: {
-            padding: "24px",
+            padding: isMobile ? "16px" : "24px",
             borderBottom: "1px solid var(--ant-color-border-secondary)",
           },
-          body: { padding: "24px" },
+          body: {
+            padding: isMobile ? "16px" : "24px",
+            maxHeight: isMobile ? "calc(100vh - 140px)" : undefined,
+            overflowY: "auto",
+          },
           content: { borderRadius: 12, overflow: "hidden", padding: 0 },
         }}
       >
@@ -499,16 +586,16 @@ export default function AdminGallery() {
             name="projetId"
             label={
               <span style={{ fontWeight: 600, color: primary }}>
-                Projet Associé *
+                {t("admin.gallery.associatedProject")}
               </span>
             }
             rules={[
-              { required: true, message: "Veuillez sélectionner un projet" },
+              { required: true, message: t("admin.gallery.selectProject") },
             ]}
           >
             <Select
               size="large"
-              placeholder="Sélectionnez un projet"
+              placeholder={t("admin.gallery.selectProject")}
               loading={loadingProjets}
               options={projets.map((p) => ({ value: p.id, label: p.titre }))}
               notFoundContent={
@@ -517,7 +604,7 @@ export default function AdminGallery() {
                 ) : (
                   <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="Aucun projet disponible, veuillez d'abord créer un projet."
+                    description={t("admin.gallery.noProjectAvailable")}
                   />
                 )
               }
@@ -528,13 +615,13 @@ export default function AdminGallery() {
             name="title"
             label={
               <span style={{ fontWeight: 600, color: primary }}>
-                Titre de la Galerie
+                {t("admin.gallery.galleryTitle")}
               </span>
             }
           >
             <Input
               size="large"
-              placeholder="e.g. Installation des caméras"
+              placeholder={t("admin.gallery.galleryTitlePlaceholder")}
               style={{ borderRadius: 8, borderColor: border }}
             />
           </Form.Item>
@@ -549,23 +636,30 @@ export default function AdminGallery() {
                 backgroundColor: bgCard,
                 borderColor: border,
                 borderRadius: 12,
-                padding: "40px 0",
+                padding: isMobile ? "16px 0" : "40px 0",
               }}
             >
               <p className="ant-upload-drag-icon">
-                <InboxOutlined style={{ color: primary, fontSize: 32 }} />
+                <InboxOutlined
+                  style={{ color: primary, fontSize: isMobile ? 28 : 32 }}
+                />
               </p>
               <p
                 className="ant-upload-text"
-                style={{ color: primary, fontWeight: 700, fontSize: 16 }}
+                style={{
+                  color: primary,
+                  fontWeight: 700,
+                  fontSize: isMobile ? 14 : 16,
+                  padding: "0 8px",
+                }}
               >
-                Drag & drop images/video here
+                {t("admin.gallery.dragDrop")}
               </p>
               <p
                 className="ant-upload-hint"
-                style={{ color: textSub, fontSize: 13 }}
+                style={{ color: textSub, fontSize: 13, padding: "0 8px" }}
               >
-                or browse files - JPG, PNG, WebP, MP4
+                {t("admin.gallery.browseFiles")}
               </p>
             </Upload.Dragger>
           </div>
@@ -573,8 +667,8 @@ export default function AdminGallery() {
           {uploadedFiles.length > 0 && (
             <div
               style={{
-                display: "flex",
-                flexWrap: "wrap",
+                display: "grid",
+                gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 72 : 80}px, 1fr))`,
                 gap: 12,
                 marginBottom: 24,
               }}
@@ -584,8 +678,8 @@ export default function AdminGallery() {
                   key={file.id}
                   style={{
                     position: "relative",
-                    width: 80,
-                    height: 80,
+                    width: "100%",
+                    aspectRatio: "1 / 1",
                     borderRadius: 12,
                     border: `1px solid ${border}`,
                     overflow: "hidden",
@@ -618,15 +712,15 @@ export default function AdminGallery() {
                       position: "absolute",
                       top: 4,
                       right: 4,
-                      background: "rgba(0,0,0,0.5)",
+                      background: "rgba(0,0,0,0.6)",
                       color: "#fff",
                       borderRadius: "50%",
-                      width: 20,
-                      height: 20,
+                      width: isMobile ? 24 : 20,
+                      height: isMobile ? 24 : 20,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 10,
+                      fontSize: 11,
                       cursor: "pointer",
                     }}
                   >
@@ -637,14 +731,13 @@ export default function AdminGallery() {
             </div>
           )}
 
-          {/* Removed duplicate title field here */}
-
           <div
             style={{
               display: "flex",
+              flexDirection: isMobile ? "column-reverse" : "row",
               justifyContent: "flex-end",
               gap: 12,
-              marginTop: 32,
+              marginTop: isMobile ? 16 : 32,
             }}
           >
             <Button
@@ -655,9 +748,10 @@ export default function AdminGallery() {
                 fontWeight: 600,
                 color: primary,
                 borderColor: border,
+                width: isMobile ? "100%" : "auto",
               }}
             >
-              Cancel
+              {t("admin.common.cancel")}
             </Button>
             <Button
               size="large"
@@ -669,9 +763,12 @@ export default function AdminGallery() {
                 fontWeight: 600,
                 backgroundColor: "var(--ant-color-primary)",
                 borderColor: "#023B6A",
+                width: isMobile ? "100%" : "auto",
               }}
             >
-              {modalMode === "edit" ? "Mettre à jour" : "Add Images"}
+              {modalMode === "edit"
+                ? t("admin.gallery.update")
+                : t("admin.gallery.addImages")}
             </Button>
           </div>
         </Form>
@@ -689,24 +786,29 @@ export default function AdminGallery() {
               right: 0,
               bottom: 0,
               zIndex: 9999,
-              background: "rgba(0, 0, 0, 0.85)",
+              background: "rgba(0, 0, 0, 0.9)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
+              padding: isMobile ? "56px 12px 24px" : 0,
+              boxSizing: "border-box",
             }}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
           >
             {/* Close button */}
             <div
               onClick={handleClosePreview}
               style={{
                 position: "absolute",
-                top: 32,
-                right: 40,
+                top: isMobile ? 12 : 32,
+                right: isMobile ? 12 : 40,
                 color: "#fff",
                 fontSize: 24,
                 cursor: "pointer",
                 padding: 8,
+                lineHeight: 1,
               }}
             >
               ✕
@@ -716,9 +818,9 @@ export default function AdminGallery() {
             <div
               style={{
                 color: "#fff",
-                fontSize: 20,
+                fontSize: isMobile ? 16 : 20,
                 fontWeight: 700,
-                marginBottom: 24,
+                marginBottom: isMobile ? 16 : 24,
                 letterSpacing: 1,
               }}
             >
@@ -729,8 +831,8 @@ export default function AdminGallery() {
             {/* Image */}
             <div
               style={{
-                maxWidth: "80%",
-                maxHeight: "65vh",
+                maxWidth: isMobile ? "100%" : "80%",
+                maxHeight: isMobile ? "60vh" : "65vh",
                 display: "flex",
                 justifyContent: "center",
               }}
@@ -740,33 +842,27 @@ export default function AdminGallery() {
                 alt="preview"
                 style={{
                   maxWidth: "100%",
-                  maxHeight: "100%",
+                  maxHeight: isMobile ? "60vh" : "65vh",
                   objectFit: "contain",
                   borderRadius: 8,
                   boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-                  border: "4px solid #fff",
+                  border: isMobile ? "2px solid #fff" : "4px solid #fff",
                 }}
               />
             </div>
 
             {/* Navigation Controls */}
-            <div style={{ display: "flex", gap: 16, marginTop: 32 }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 16,
+                marginTop: isMobile ? 24 : 32,
+              }}
+            >
               <button
                 onClick={handlePrevPreview}
-                disabled={previewImageIndex === 0}
-                style={{
-                  width: 44,
-                  height: 44,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: 8,
-                  border: "none",
-                  cursor: previewImageIndex === 0 ? "not-allowed" : "pointer",
-                  background: previewImageIndex === 0 ? "#475569" : "#2563EB",
-                  color: previewImageIndex === 0 ? "#94A3B8" : "#fff",
-                  transition: "all 0.2s",
-                }}
+                disabled={isFirst}
+                style={navBtnStyle(isFirst)}
               >
                 <svg
                   width="20"
@@ -783,31 +879,8 @@ export default function AdminGallery() {
               </button>
               <button
                 onClick={handleNextPreview}
-                disabled={
-                  previewImageIndex === previewGallery.images.length - 1
-                }
-                style={{
-                  width: 44,
-                  height: 44,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: 8,
-                  border: "none",
-                  cursor:
-                    previewImageIndex === previewGallery.images.length - 1
-                      ? "not-allowed"
-                      : "pointer",
-                  background:
-                    previewImageIndex === previewGallery.images.length - 1
-                      ? "#475569"
-                      : "#2563EB",
-                  color:
-                    previewImageIndex === previewGallery.images.length - 1
-                      ? "#94A3B8"
-                      : "#fff",
-                  transition: "all 0.2s",
-                }}
+                disabled={isLast}
+                style={navBtnStyle(isLast)}
               >
                 <svg
                   width="20"
@@ -828,5 +901,3 @@ export default function AdminGallery() {
     </div>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────

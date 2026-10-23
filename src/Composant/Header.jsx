@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   DownOutlined,
   SearchOutlined,
   MenuOutlined,
   GlobalOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Drawer, ConfigProvider, theme, Menu } from "antd";
+import { Dropdown, Drawer, ConfigProvider, theme, Menu, Button } from "antd";
 import logo from "../assets/logo.png";
 
 export default function Header({
@@ -18,6 +19,7 @@ export default function Header({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,6 +46,7 @@ export default function Header({
       resources: "Resources",
       contact: "Contact",
       cta: "Request a Consultation",
+      privateSpace: "Private Area",
     },
 
     FR: {
@@ -55,6 +58,7 @@ export default function Header({
       resources: "Ressources",
       contact: "Contact",
       cta: "Demander une consultation",
+      privateSpace: "Espace privé",
     },
 
     ES: {
@@ -66,6 +70,7 @@ export default function Header({
       resources: "Recursos",
       contact: "Contacto",
       cta: "Solicitar una consulta",
+      privateSpace: "Área privada",
     },
 
     CH: {
@@ -77,6 +82,7 @@ export default function Header({
       resources: "资源",
       contact: "联系我们",
       cta: "申请咨询",
+      privateSpace: "私人空间",
     },
 
     AR: {
@@ -88,6 +94,7 @@ export default function Header({
       resources: "الموارد",
       contact: "اتصل بنا",
       cta: "طلب استشارة",
+      privateSpace: "المنطقة الخاصة",
     },
   };
 
@@ -703,13 +710,19 @@ export default function Header({
 
   // Helper to smoothly scroll to an element by its id (anchor hash)
   const scrollToSection = (hash) => {
-    const id = hash.replace('#', '');
+    const id = hash.replace("#", "");
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
       // Update URL hash without causing navigation
-      window.history.replaceState(null, '', hash);
+      window.history.replaceState(null, "", hash);
     }
+  };
+
+  // Navigation vers l'espace privé (page de connexion)
+  const goToPrivateSpace = () => {
+    setMobileMenuOpen(false);
+    navigate("/login");
   };
 
   const getAboutItems = () =>
@@ -724,13 +737,17 @@ export default function Header({
             //  • #mission-vision, #values, #testimonials -> smooth scroll
             //  • #projects -> navigate to projects page
             //  • other hashes (e.g., #about) -> navigate via onNavigate
-            if (item.href === "#mission-vision" || item.href === "#values" || item.href === "#testimonials") {
+            if (
+              item.href === "#mission-vision" ||
+              item.href === "#values" ||
+              item.href === "#testimonials"
+            ) {
               scrollToSection(item.href);
             } else if (item.href === "#projects") {
               onNavigate("projects");
             } else {
               // Fallback for any other hash or route
-              onNavigate(item.href.replace(/^#/, ''));
+              onNavigate(item.href.replace(/^#/, ""));
             }
           }}
           className="block px-2 py-1 text-sm font-medium"
@@ -1051,12 +1068,12 @@ export default function Header({
     },
     {
       key: "CH",
-      label: "Chinois (CH)",
+      label: "中文 (CH)",
       onClick: () => setLang("CH"),
     },
     {
       key: "AR",
-      label: "Arabe (AR)",
+      label: "العربية (AR)",
       onClick: () => setLang("AR"),
     },
   ];
@@ -1079,15 +1096,15 @@ export default function Header({
           scrolled ? "py-3" : "py-4"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-8 2xl:px-10">
+          <div className="flex items-center justify-between gap-4 xl:gap-6">
             <a
               href="#"
               onClick={(e) => {
                 e.preventDefault();
                 onNavigate("home");
               }}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-2 group shrink-0"
             >
               <img
                 src={logo}
@@ -1096,7 +1113,10 @@ export default function Header({
               />
             </a>
 
-            <nav className="hidden lg:flex items-center gap-8">
+            {/* Menu complet à partir de 1280px (xl) : en dessous, il ne tient pas sur une ligne
+                (FR / ES ont des libellés plus longs) → menu hamburger.
+                whitespace-nowrap : un libellé ne se coupe jamais sur 2 lignes. */}
+            <nav className="hidden xl:flex items-center gap-4 2xl:gap-7 shrink-0 whitespace-nowrap">
               {/* HOME */}
               <a
                 href="#"
@@ -1186,7 +1206,7 @@ export default function Header({
               </Dropdown>
             </nav>
 
-            <div className="hidden lg:flex items-center gap-6">
+            <div className="hidden xl:flex items-center gap-3 2xl:gap-5 shrink-0 whitespace-nowrap">
               {/* SEARCH */}
               <div className="relative">
                 <button
@@ -1240,7 +1260,7 @@ export default function Header({
               {/* CTA */}
               <button
                 onClick={onOpenConsultation}
-                className="text-sm font-bold bg-[#ffe052] hover:bg-[#fbd319] text-[#023B6A] px-5 py-2.5 rounded-lg shadow-md transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer border-none"
+                className="text-sm font-bold bg-[#ffe052] hover:bg-[#fbd319] text-[#023B6A] px-4 2xl:px-5 py-2.5 rounded-lg shadow-md whitespace-nowrap transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer border-none"
               >
                 {nav.cta}
               </button>
@@ -1260,9 +1280,29 @@ export default function Header({
                   <DownOutlined className="text-[8px]" />
                 </button>
               </Dropdown>
+
+              {/* PRIVATE SPACE (antd Button -> /login) */}
+              <Button
+                type="primary"
+                size="large"
+                onClick={goToPrivateSpace}
+                aria-label={nav.privateSpace}
+                title={nav.privateSpace}
+                style={{
+                  backgroundColor: "#023B6A",
+                  borderColor: "#023B6A",
+                  height: 44,
+                  paddingInline: 22,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  borderRadius: 10,
+                }}
+              >
+                <span>{nav.privateSpace}</span>
+              </Button>
             </div>
 
-            <div className="flex lg:hidden items-center gap-4">
+            <div className="flex xl:hidden items-center gap-4">
               {/* MOBILE SEARCH */}
               <button
                 onClick={() => {
@@ -1277,7 +1317,6 @@ export default function Header({
                 <SearchOutlined className="text-lg" />
               </button>
 
-              {/* MOBILE LANGUAGE */}
               <button
                 onClick={handleMobileLanguageChange}
                 className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-1 rounded-md"
@@ -1305,7 +1344,7 @@ export default function Header({
         </div>
 
         {searchOpen && (
-          <div className="lg:hidden bg-white border-b border-slate-100 px-4 py-3">
+          <div className="xl:hidden bg-white border-b border-slate-100 px-4 py-3">
             <form onSubmit={handleSearchSubmit} className="flex gap-2">
               <input
                 type="text"
@@ -1331,14 +1370,14 @@ export default function Header({
           onClose={() => setMobileMenuOpen(false)}
           open={mobileMenuOpen}
           width={320}
-          className="lg:hidden"
+          className="xl:hidden"
           styles={{
             body: {
               padding: 0,
             },
           }}
           footer={
-            <div className="p-4">
+            <div className="p-4 flex flex-col gap-3">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -1348,6 +1387,16 @@ export default function Header({
               >
                 {nav.cta}
               </button>
+
+              <Button
+                type="primary"
+                size="large"
+                block
+                onClick={goToPrivateSpace}
+                className="font-bold"
+              >
+                {nav.privateSpace}
+              </Button>
             </div>
           }
         >

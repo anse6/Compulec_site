@@ -1,8 +1,10 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useAdminTheme } from "../AdminThemeContext";
 
 export default function DashboardHeader() {
   const isDark = useAdminTheme();
+  const { t } = useTranslation();
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
 
   return (
@@ -26,7 +28,7 @@ export default function DashboardHeader() {
             letterSpacing: "-0.3px",
           }}
         >
-          Dashboard
+          {t("admin.dashboard.title")}
         </h1>
       </div>
     </div>

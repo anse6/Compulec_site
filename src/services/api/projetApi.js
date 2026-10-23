@@ -35,7 +35,12 @@ const projetApi = baseApi.injectEndpoints({
     getProjetsPublies: builder.query({
       query: ({ page = 0, size = 50 } = {}) =>
         `/projets/publies?page=${page}&size=${size}`,
-      providesTags: [{ type: API_TAGS.PROJET, id: 'PUBLIES' }],
+      // 'LIST' aussi : toutes les mutations (création, publication, suppression…) l'invalident,
+      // les pages publiques (accueil, /projects) se mettent donc à jour sans rechargement.
+      providesTags: [
+        { type: API_TAGS.PROJET, id: 'PUBLIES' },
+        { type: API_TAGS.PROJET, id: 'LIST' },
+      ],
     }),
 
     // ── GET BY ID ─────────────────────────────────────────────────────────

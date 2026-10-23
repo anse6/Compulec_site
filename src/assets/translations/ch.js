@@ -181,6 +181,8 @@ export const ch = {
     tagline: "项目与成果",
     title: "以实力证明自身的部署案例",
     allProjects: "所有项目",
+    emptyProjects: "暂无已发布的项目。",
+    loadError: "无法加载项目。",
     viewCase: "查看案例研究",
     items: [
       {
@@ -670,6 +672,9 @@ export const ch = {
     tagline: "新闻与观点",
     title: "COMPULEC最新动态",
     allArticles: "所有文章",
+    emptyArticles: "暂无已发布的文章。",
+    loadError: "无法加载文章。",
+    readTime: "阅读约 {n} 分钟",
     items: [
       {
         id: "1",

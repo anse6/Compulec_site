@@ -1,7 +1,13 @@
 import React from 'react';
 import { Skeleton } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useAdminTheme } from '../AdminThemeContext';
-import { useGetDashboardRecentActivityQuery } from '../../../services/api/dashboardApi';
+import WidgetError from './WidgetError';
+import { formatDashboardDate } from './dashboardFormat';
+import {
+  useGetDashboardRecentActivityQuery,
+  DASHBOARD_QUERY_OPTIONS,
+} from '../../../services/api/dashboardApi';
 
 const IconActivityProject = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -43,28 +49,28 @@ const ICON_MAP = {
   MESSAGE: { Icon: IconActivityMessage, bg: '#059669' },
   ARTICLE: { Icon: IconActivityArticle, bg: '#2563EB' },
   GALLERY: { Icon: IconActivityGallery, bg: '#D97706' },
-  CHAT:    { Icon: IconActivityAIChat,  bg: '#D97706' },
+  CHAT:    { Icon: IconActivityAIChat,  bg: '#EA580C' },
   USER:    { Icon: IconActivityUsers,   bg: '#DC2626' },
 };
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffH = (now - d) / (1000 * 60 * 60);
-  if (diffH < 24) return 'Today, ' + d.toLocaleTimeString('fr-CM', { hour: '2-digit', minute: '2-digit' });
-  if (diffH < 48) return 'Yesterday, ' + d.toLocaleTimeString('fr-CM', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('fr-CM', { day: '2-digit', month: 'short', year: 'numeric' });
+/** Texte traduit d'une activité : clé admin.dashboard.activity.<TYPE>_<ACTION>. */
+function activityText(item, t) {
+  const subject = item.subject || t('admin.dashboard.activity.untitled');
+  return t(`admin.dashboard.activity.${item.type}_${item.action}`, {
+    subject,
+    defaultValue: subject,
+  });
 }
 
 export default function RecentActivity() {
   const isDark = useAdminTheme();
+  const { t, i18n } = useTranslation();
   const bgCard  = isDark ? '#1E293B' : '#fff';
   const border  = isDark ? '#334155' : '#EEF2F7';
   const textMain = isDark ? '#F8FAFC' : '#0F172A';
   const textSub  = isDark ? '#94A3B8' : '#64748B';
 
-  const { data, isLoading } = useGetDashboardRecentActivityQuery(20);
+  const { data, isLoading, isError, refetch } = useGetDashboardRecentActivityQuery(20, DASHBOARD_QUERY_OPTIONS);
   const activities = data?.data ?? [];
 
   if (isLoading) {
@@ -87,10 +93,10 @@ export default function RecentActivity() {
     }}>
       <div style={{ padding: '24px', borderBottom: `1px solid ${border}` }}>
         <h3 style={{ fontWeight: 800, fontSize: 18, color: textMain, margin: '0 0 4px' }}>
-          Recent Activity
+          {t('admin.dashboard.recentActivity')}
         </h3>
         <p style={{ fontSize: 13, color: textSub, margin: 0 }}>
-          Latest changes across the website
+          {t('admin.dashboard.activitySubtitle')}
         </p>
       </div>
 
@@ -100,16 +106,18 @@ export default function RecentActivity() {
         className="recent-activity-list"
         style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', maxHeight: '415px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {activities.length === 0 ? (
+        {isError ? (
+          <WidgetError onRetry={refetch} />
+        ) : activities.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8', fontSize: 13 }}>
-            No recent activity yet.
+            {t('admin.dashboard.noActivity')}
           </div>
         ) : (
           activities.map((item, index) => {
             const cfg = ICON_MAP[item.type] || ICON_MAP['USER'];
             return (
               <div
-                key={index}
+                key={`${item.type}-${item.targetId}-${item.date}`}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
@@ -122,8 +130,8 @@ export default function RecentActivity() {
                   <cfg.Icon size={18} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <p style={{ fontSize: 13, color: textMain, fontWeight: 600, margin: 0, lineHeight: 1.4 }}>{item.title}</p>
-                  <p style={{ fontSize: 11, color: textSub, margin: 0 }}>{formatDate(item.date)}</p>
+                  <p style={{ fontSize: 13, color: textMain, fontWeight: 600, margin: 0, lineHeight: 1.4 }}>{activityText(item, t)}</p>
+                  <p style={{ fontSize: 11, color: textSub, margin: 0 }}>{formatDashboardDate(item.date, t, i18n.language)}</p>
                 </div>
               </div>
             );

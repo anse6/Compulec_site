@@ -183,6 +183,8 @@ export const es = {
     tagline: "PROYECTOS Y LOGROS",
     title: "Implementaciones que hablan por sí mismas",
     allProjects: "Todos los proyectos",
+    emptyProjects: "Aún no hay proyectos publicados.",
+    loadError: "No se pudieron cargar los proyectos.",
     viewCase: "Ver el caso de estudio",
     items: [
       {
@@ -684,6 +686,9 @@ export const es = {
     tagline: "NOTICIAS Y PERSPECTIVAS",
     title: "Las últimas noticias de COMPULEC",
     allArticles: "Todos los artículos",
+    emptyArticles: "Aún no hay artículos publicados.",
+    loadError: "No se pudieron cargar los artículos.",
+    readTime: "{n} min de lectura",
     items: [
       {
         id: "1",

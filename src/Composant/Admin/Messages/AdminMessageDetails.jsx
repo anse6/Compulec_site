@@ -1,5 +1,6 @@
 import React from "react";
 import { useAdminTheme } from "../AdminThemeContext";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeftOutlined,
@@ -48,6 +49,7 @@ function formatDate(dateStr) {
 
 export default function AdminMessageDetails() {
   const isDark = useAdminTheme();
+  const { t } = useTranslation();
   const bgCard = isDark ? "#1E293B" : "#ffffff";
   const border = isDark ? "#334155" : "#E2E8F0";
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
@@ -100,9 +102,9 @@ export default function AdminMessageDetails() {
   if (!rawData) {
     return (
       <div className="flex flex-col items-center justify-center pt-20">
-        <p className=" mb-4" style={{ color: textSub }}>Message introuvable.</p>
+        <p className=" mb-4" style={{ color: textSub }}>{t('admin.messages.details')}</p>
         <Button onClick={() => navigate("/admin/messages")} icon={<ArrowLeftOutlined />}>
-          Retour aux messages
+          {t('admin.messages.backToMessages')}
         </Button>
       </div>
     );
@@ -134,7 +136,7 @@ export default function AdminMessageDetails() {
         onClick={() => navigate("/admin/messages")}
         className="px-0 font-semibold mb-4" style={{ color: textMain }}
       >
-        Retour aux messages
+        {t('admin.messages.backToMessages')}
       </Button>
 
       {/* Header Info */}
@@ -149,9 +151,9 @@ export default function AdminMessageDetails() {
             {" "} — reçu le {formatDate(contact.createdAt)}
           </p>
           {contact.lu ? (
-            <Tag color="green" icon={<CheckCircleOutlined />}>Lu</Tag>
+            <Tag color="green" icon={<CheckCircleOutlined />}>{t('admin.messages.read')}</Tag>
           ) : (
-            <Tag color="gold" icon={<ClockCircleOutlined />}>Non lu</Tag>
+            <Tag color="gold" icon={<ClockCircleOutlined />}>{t('admin.messages.unread')}</Tag>
           )}
           {isConsultation && (
             <Tag color="blue" icon={<ProjectOutlined />}>Consultation</Tag>
@@ -167,7 +169,7 @@ export default function AdminMessageDetails() {
               icon={<CheckCircleOutlined />}
               style={{ borderRadius: 8, fontWeight: 600, color: textMain, borderColor: isDark ? "#34D399" : "#059669", backgroundColor: isDark ? "#064E3B" : "#ECFDF5" }}
             >
-              Marquer comme lu
+              {t('admin.messages.markAsRead')}
             </Button>
           )}
           <Button
@@ -182,7 +184,7 @@ export default function AdminMessageDetails() {
               borderRadius: 8,
             }}
           >
-            Répondre
+            {t('admin.messages.reply')}
           </Button>
         </div>
       </div>
@@ -192,22 +194,22 @@ export default function AdminMessageDetails() {
         {/* LEFT COLUMN */}
         <div className="flex flex-col gap-6">
           <Card
-            title={<span className=" font-bold">{isConsultation ? "Description du Projet" : "Contenu du Message"}</span>}
+            title={<span className=" font-bold">{isConsultation ? t('admin.messages.messageContent') : t('admin.messages.messageContent')}</span>}
             bordered={true}
             className="rounded-xl  shadow-sm" style={{ borderColor: border }}
           >
             <p className="text-[14px]  whitespace-pre-wrap leading-relaxed m-0" style={{ color: textMain }}>
-              {contact.message || "Aucun contenu fourni."}
+              {contact.message || t('admin.messages.messageContent')}
             </p>
           </Card>
 
           <Card
-            title={<span className=" font-bold">Réponses</span>}
+            title={<span className=" font-bold">{t('admin.messages.responses')}</span>}
             bordered={true}
-            className="rounded-xl  shadow-sm " style={{ borderColor: border }} style={{ backgroundColor: isDark ? "#0F172A" : "#F8FAFC" }}
+            className="rounded-xl  shadow-sm " style={{ borderColor: border, backgroundColor: isDark ? "#0F172A" : "#F8FAFC" }}
           >
             <p className="text-[13px] text-slate-400 italic m-0">
-              Aucune réponse envoyée depuis l'administration pour l'instant.
+              {t('admin.messages.replies') || "Aucune réponse envoyée."}
             </p>
             <Button
               type="primary"
@@ -218,7 +220,7 @@ export default function AdminMessageDetails() {
                 marginTop: 16, fontWeight: 600, borderRadius: 8,
               }}
             >
-              Répondre par email
+              {t('admin.messages.reply')}
             </Button>
           </Card>
         </div>
@@ -226,7 +228,7 @@ export default function AdminMessageDetails() {
         {/* RIGHT COLUMN */}
         <div className="flex flex-col gap-6">
           <Card
-            title={<span className=" font-bold">Informations du Contact</span>}
+            title={<span className=" font-bold">{t('admin.messages.senderInfo')}</span>}
             bordered={true}
             className="rounded-xl  shadow-sm" style={{ borderColor: border }}
             styles={{ body: { padding: 0 } }}
@@ -258,7 +260,7 @@ export default function AdminMessageDetails() {
               labelStyle={{ fontWeight: 600, color: primary, fontSize: 13, width: 120 }}
               contentStyle={{ fontSize: 13 }}
             >
-              <Descriptions.Item label={<span><MailOutlined /> Email</span>}>
+              <Descriptions.Item label={<span><MailOutlined /> {t('admin.messages.email')}</span>}>
                 <a
                   href={`mailto:${contact.email}`}
                   className=" hover:underline flex items-center gap-1.5 break-all"
@@ -267,28 +269,28 @@ export default function AdminMessageDetails() {
                 </a>
               </Descriptions.Item>
               {contact.telephone && (
-                <Descriptions.Item label={<span><PhoneOutlined /> Téléphone</span>}>
+                <Descriptions.Item label={<span><PhoneOutlined /> {t('admin.users.phone')}</span>}>
                   {contact.telephone}
                 </Descriptions.Item>
               )}
               {contact.entreprise && (
-                <Descriptions.Item label="Entreprise">
+                <Descriptions.Item label={t('admin.messages.senderInfo')}>
                   {contact.entreprise}
                 </Descriptions.Item>
               )}
               {isConsultation && contact.preferredContact && (
-                <Descriptions.Item label="Contact Préféré">
+                <Descriptions.Item label={t('admin.messages.replyTo')}>
                   {contact.preferredContact}
                 </Descriptions.Item>
               )}
-              <Descriptions.Item label={<span><CalendarOutlined /> Reçu</span>}>
+              <Descriptions.Item label={<span><CalendarOutlined /> {t('admin.messages.received')}</span>}>
                 {formatDate(contact.createdAt)}
               </Descriptions.Item>
-              <Descriptions.Item label="Statut">
+              <Descriptions.Item label={t('admin.projects.status')}>
                 {contact.lu ? (
-                  <Tag color="green" icon={<CheckCircleOutlined />}>Lu</Tag>
+                  <Tag color="green" icon={<CheckCircleOutlined />}>{t('admin.messages.read')}</Tag>
                 ) : (
-                  <Tag color="gold" icon={<ClockCircleOutlined />}>Non lu</Tag>
+                  <Tag color="gold" icon={<ClockCircleOutlined />}>{t('admin.messages.unread')}</Tag>
                 )}
               </Descriptions.Item>
             </Descriptions>
@@ -296,8 +298,8 @@ export default function AdminMessageDetails() {
 
           {/* Info Notice */}
           <Alert
-            message="Réponse par Email"
-            description="Vos réponses seront envoyées directement à l'adresse email du client."
+            message={t('admin.messages.reply')}
+            description={t('admin.messages.replyTo')}
             type="info"
             showIcon
             icon={<InfoCircleOutlined />}

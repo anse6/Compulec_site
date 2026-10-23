@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAdminTheme } from "../AdminThemeContext";
 import {
   Table,
-  ConfigProvider,
   Input,
   Button,
   Segmented,
   Card,
   Tag,
   Popconfirm,
-  Spin,
   Empty,
   message,
   Skeleton,
   Modal,
   Switch,
+  Grid,
 } from "antd";
 import {
   EyeOutlined,
@@ -35,25 +35,48 @@ import {
   useDepublierArticleMutation,
   useDeleteArticleMutation,
 } from "../../../services/api/newsApi";
-import dayjs from "dayjs";
+import { BASE_IMG } from "../../../config";
+import { formatNewsDate } from "./newsFormat";
 
-const BASE_IMG = "http://localhost:8080/api";
+// Largeurs fixes des colonnes (scroll horizontal sur mobile / tablette)
+// IMAGE 70 + TITLE 200 + SUBTITLE 180 + HEADING 180 + OVERVIEW 200 + DATE 130
+const BASE_COLUMNS_WIDTH = 70 + 200 + 180 + 180 + 200 + 130;
+const ACTION_WIDTH_DESKTOP = 260; // switch + label + 3 boutons
+const ACTION_WIDTH_MOBILE = 170; // switch seul + 3 boutons
+
+// CSS pour masquer la barre de scroll du tableau (le scroll reste actif)
+const hideScrollbarCss = `
+  .news-table-wrap .ant-table-content,
+  .news-table-wrap .ant-table-body,
+  .news-table-wrap .ant-table-container {
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* IE / ancien Edge */
+    -webkit-overflow-scrolling: touch;
+  }
+  .news-table-wrap .ant-table-content::-webkit-scrollbar,
+  .news-table-wrap .ant-table-body::-webkit-scrollbar,
+  .news-table-wrap .ant-table-container::-webkit-scrollbar {
+    display: none;                  /* Chrome, Safari, mobiles */
+    width: 0;
+    height: 0;
+  }
+`;
 
 // Helpers
 function getImageUrl(img) {
-  if (!img) return "https://placehold.co/96x64?text=No+img";
+  if (!img) return "https://placehold.co/96x64?text=%E2%80%94";
   if (img.startsWith("http")) return img;
   const cleanPath = img.startsWith("/api/") ? img.slice(4) : img;
   return `${BASE_IMG}${cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`}`;
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return "—";
-  return dayjs(dateStr).format("DD MMM YYYY");
-};
-
 //  VisibilityToggle — Modal Ant Design
 export function VisibilityToggle({ articleId, publie }) {
+  const isDark = useAdminTheme();
+  const { t } = useTranslation();
+  // (bug corrigé : textSub n'était pas défini dans ce composant)
+  const textSub = isDark ? "#94A3B8" : "#64748B";
+
   const [publier, { isLoading: publishing }] = usePublierArticleMutation();
   const [depublier, { isLoading: unpublishing }] =
     useDepublierArticleMutation();
@@ -62,13 +85,13 @@ export function VisibilityToggle({ articleId, publie }) {
   const handleToggle = (e) => {
     e.stopPropagation();
     const nextLabel = publie
-      ? "Draft (non visible)"
-      : "Published (visible sur le site)";
+      ? t("admin.news.visibilityDraftLabel")
+      : t("admin.news.visibilityPublishedLabel");
 
     Modal.confirm({
       title: (
         <span style={{ fontWeight: 700, fontSize: 15 }}>
-          Modifier la visibilité de l'article ?
+          {t("admin.news.visibilityTitle")}
         </span>
       ),
       icon: (
@@ -84,7 +107,7 @@ export function VisibilityToggle({ articleId, publie }) {
               margin: "0 0 12px",
             }}
           >
-            Cet article sera marqué comme{" "}
+            {t("admin.news.visibilityWillBe")}{" "}
             <strong style={{ color: publie ? "#d97706" : "#16a34a" }}>
               {nextLabel}
             </strong>
@@ -101,7 +124,7 @@ export function VisibilityToggle({ articleId, publie }) {
                 color: "#166534",
               }}
             >
-              L'article sera immédiatement visible par les visiteurs du site.
+              {t("admin.news.visibilityPublishHint")}
             </div>
           )}
           {publie && (
@@ -115,13 +138,13 @@ export function VisibilityToggle({ articleId, publie }) {
                 color: "#92400e",
               }}
             >
-              L'article sera masqué du site public.
+              {t("admin.news.visibilityUnpublishHint")}
             </div>
           )}
         </div>
       ),
-      okText: publie ? "Dépublier" : "Publier",
-      cancelText: "Annuler",
+      okText: publie ? t("admin.news.unpublish") : t("admin.news.publish"),
+      cancelText: t("admin.news.cancel"),
       okButtonProps: {
         style: {
           background: publie ? "#d97706" : "#16a34a",
@@ -130,23 +153,23 @@ export function VisibilityToggle({ articleId, publie }) {
       },
       onOk: async () => {
         try {
-          let result;
           if (publie) {
-            result = await depublier(articleId).unwrap();
+            await depublier(articleId).unwrap();
+            message.success(t("admin.news.unpublishedOk"));
           } else {
-            result = await publier(articleId).unwrap();
+            await publier(articleId).unwrap();
+            message.success(t("admin.news.publishedOk"));
           }
-          message.success(result.message || "Visibilité mise à jour !");
-        } catch (err) {
-          message.error(err?.data?.message || "Erreur lors de la mise à jour.");
+        } catch {
+          message.error(t("admin.news.updateError"));
         }
       },
     });
   };
 
   const cfg = publie
-    ? { color: "success", label: "Published", icon: <GlobalOutlined /> }
-    : { color: "default", label: "Draft", icon: <StopOutlined /> };
+    ? { color: "success", label: t("admin.news.published"), icon: <GlobalOutlined /> }
+    : { color: "default", label: t("admin.news.draft"), icon: <StopOutlined /> };
 
   return (
     <Tag
@@ -164,51 +187,53 @@ export function VisibilityToggle({ articleId, publie }) {
         opacity: loading ? 0.6 : 1,
       }}
     >
-      {loading ? "Updating…" : cfg.label}
+      {loading ? t("admin.news.updating") : cfg.label}
     </Tag>
   );
 }
 
-// ── DeleteButton ──────────────────────────────────────────────────────────────
+//  DeleteButton
 function DeleteButton({ articleId }) {
+  const { t } = useTranslation();
   const [deleteArticle, { isLoading }] = useDeleteArticleMutation();
 
   const handleDelete = async () => {
     try {
       await deleteArticle(articleId).unwrap();
-      message.success("Article supprimé avec succès.");
-    } catch (err) {
-      message.error(err?.data?.message || "Erreur lors de la suppression.");
+      message.success(t("admin.news.deletedOk"));
+    } catch {
+      message.error(t("admin.news.deleteError"));
     }
   };
 
   return (
     <Popconfirm
-      title="Supprimer cet article ?"
-      description="Cette action est irréversible."
-      okText="Supprimer"
-      cancelText="Annuler"
+      title={t("admin.news.deleteConfirm")}
+      description={t("admin.news.deleteIrreversible")}
+      okText={t("admin.news.delete")}
+      cancelText={t("admin.news.cancel")}
       okButtonProps={{ danger: true, loading: isLoading }}
       onConfirm={handleDelete}
+      placement="topRight"
     >
       <Button
         type="text"
         danger
         icon={<DeleteOutlined />}
         loading={isLoading}
+        title={t("admin.news.delete")}
       />
     </Popconfirm>
   );
 }
 
-// ── ArticleActionCell — composant proper pour éviter hooks dans render ────────
-function ArticleActionCell({ record, navigate }) {
+//  ArticleActionCell — composant propre pour éviter les hooks dans render
+function ArticleActionCell({ record, navigate, isMobile }) {
   const isDark = useAdminTheme();
-  const bgCard = isDark ? "#1E293B" : "#ffffff";
+  const { t } = useTranslation();
+  const bgSwitch = isDark ? "#0F172A" : "#F8FAFC";
   const border = isDark ? "#334155" : "#E2E8F0";
-  const textMain = isDark ? "#F8FAFC" : "#0F172A";
   const textSub = isDark ? "#94A3B8" : "#64748B";
-  const primary = isDark ? "#38bdf8" : "#023B6A";
 
   const [publier, { isLoading: publishing }] = usePublierArticleMutation();
   const [depublier, { isLoading: unpublishing }] =
@@ -219,13 +244,13 @@ function ArticleActionCell({ record, navigate }) {
     try {
       if (checked) {
         await publier(record.id).unwrap();
-        message.success("Article publié !");
+        message.success(t("admin.news.publishedOk"));
       } else {
         await depublier(record.id).unwrap();
-        message.success("Article dépublié !");
+        message.success(t("admin.news.unpublishedOk"));
       }
-    } catch (error) {
-      message.error("Erreur lors de la mise à jour.");
+    } catch {
+      message.error(t("admin.news.updateError"));
     }
   };
 
@@ -235,36 +260,39 @@ function ArticleActionCell({ record, navigate }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-end",
-        gap: 8,
+        gap: isMobile ? 4 : 8,
       }}
     >
-      {/* Switch publish */}
+      {/* Switch publish : sur mobile, le switch seul (sans cadre ni libellé) */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 6,
-          marginRight: 4,
-          backgroundColor: "#F8FAFC",
-          padding: "4px 10px",
+          marginRight: isMobile ? 0 : 4,
+          backgroundColor: isMobile ? "transparent" : bgSwitch,
+          padding: isMobile ? "0 4px" : "4px 10px",
           borderRadius: 8,
-          border: `1px solid ${border}`,
+          border: isMobile ? "none" : `1px solid ${border}`,
         }}
       >
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: record.published ? "#16a34a" : "#94A3B8",
-          }}
-        >
-          {record.published ? "Published" : "Draft"}
-        </span>
+        {!isMobile && (
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: record.published ? "#16a34a" : "#94A3B8",
+            }}
+          >
+            {record.published ? t("admin.news.published") : t("admin.news.draft")}
+          </span>
+        )}
         <Switch
           size="small"
           checked={record.published}
           loading={loading}
           onChange={handleTogglePublish}
+          title={record.published ? t("admin.news.published") : t("admin.news.draft")}
           style={{ background: record.published ? "#16a34a" : undefined }}
         />
       </div>
@@ -274,14 +302,14 @@ function ArticleActionCell({ record, navigate }) {
         icon={<EyeOutlined />}
         onClick={() => navigate(`/admin/news/preview/${record.id}`)}
         style={{ color: textSub }}
-        title="Voir"
+        title={t("admin.news.view")}
       />
       <Button
         type="text"
         icon={<EditOutlined />}
         onClick={() => navigate(`/admin/news/edit/${record.id}`)}
         style={{ color: textSub }}
-        title="Modifier"
+        title={t("admin.news.edit")}
       />
       <DeleteButton articleId={record.id} />
     </div>
@@ -291,6 +319,10 @@ function ArticleActionCell({ record, navigate }) {
 //  Main Component
 export default function AdminNews() {
   const isDark = useAdminTheme();
+  const { t, i18n } = useTranslation();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md; // < 768px
+
   const bgCard = isDark ? "#1E293B" : "#ffffff";
   const border = isDark ? "#334155" : "#E2E8F0";
   const textMain = isDark ? "#F8FAFC" : "#0F172A";
@@ -299,6 +331,7 @@ export default function AdminNews() {
 
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
+  // Valeurs internes stables (All / Published / Draft) ; seuls les libellés sont traduits
   const [visibilityFilter, setVisibilityFilter] = useState("All");
   const [page, setPage] = useState(0);
   const navigate = useNavigate();
@@ -309,8 +342,7 @@ export default function AdminNews() {
     size: 50,
   });
 
-  const articles = data?.data?.content ?? [];
-  const total = data?.data?.totalElements ?? 0;
+  const articles = useMemo(() => data?.data?.content ?? [], [data]);
 
   //  Filtres combinés
   const filtered = useMemo(
@@ -338,10 +370,14 @@ export default function AdminNews() {
 
   const hasActiveFilters = search || visibilityFilter !== "All";
 
-  //  Colonnes table
+  // Largeur totale du tableau = somme des `width` des colonnes
+  const actionWidth = isMobile ? ACTION_WIDTH_MOBILE : ACTION_WIDTH_DESKTOP;
+  const tableMinWidth = BASE_COLUMNS_WIDTH + actionWidth;
+
+  //  Colonnes table — largeurs fixes pour le scroll horizontal
   const columns = [
     {
-      title: "IMAGE",
+      title: t("admin.news.colImage"),
       key: "image",
       width: 70,
       render: (_, record) => (
@@ -359,78 +395,96 @@ export default function AdminNews() {
       ),
     },
     {
-      title: "TITLE",
+      title: t("admin.news.colTitle"),
       dataIndex: "title",
       key: "title",
-      render: (t) => (
+      width: 200,
+      render: (text) => (
         <div
+          title={text}
           style={{
             fontWeight: 700,
             color: textMain,
             fontSize: 13,
-            minWidth: 120,
-          }}
-        >
-          {t}
-        </div>
-      ),
-    },
-    {
-      title: "SUBTITLE",
-      dataIndex: "subtitle",
-      key: "subtitle",
-      render: (t) => (
-        <div
-          style={{
-            fontSize: 12,
-            color: textSub,
-            minWidth: 120,
-          }}
-        >
-          {t || "—"}
-        </div>
-      ),
-    },
-    {
-      title: "HEADING",
-      dataIndex: "heading",
-      key: "heading",
-      render: (t) => (
-        <div
-          style={{
-            fontSize: 12,
-            color: textSub,
-            minWidth: 120,
-          }}
-        >
-          {t || "—"}
-        </div>
-      ),
-    },
-    {
-      title: "OVERVIEW",
-      dataIndex: "overview",
-      key: "overview",
-      render: (t) => (
-        <div
-          style={{
-            fontSize: 12,
-            color: textSub,
-            maxWidth: 200,
+            maxWidth: 170,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
           }}
         >
-          {t || "—"}
+          {text}
         </div>
       ),
     },
     {
-      title: "DATE",
+      title: t("admin.news.colSubtitle"),
+      dataIndex: "subtitle",
+      key: "subtitle",
+      width: 180,
+      render: (text) => (
+        <div
+          title={text}
+          style={{
+            fontSize: 12,
+            color: textSub,
+            maxWidth: 150,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {text || "—"}
+        </div>
+      ),
+    },
+    {
+      title: t("admin.news.colHeading"),
+      dataIndex: "heading",
+      key: "heading",
+      width: 180,
+      render: (text) => (
+        <div
+          title={text}
+          style={{
+            fontSize: 12,
+            color: textSub,
+            maxWidth: 150,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {text || "—"}
+        </div>
+      ),
+    },
+    {
+      title: t("admin.news.colOverview"),
+      dataIndex: "overview",
+      key: "overview",
+      width: 200,
+      render: (text) => (
+        <div
+          title={text}
+          style={{
+            fontSize: 12,
+            color: textSub,
+            maxWidth: 170,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {text || "—"}
+        </div>
+      ),
+    },
+    {
+      title: t("admin.news.colDate"),
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (t) => (
+      width: 130,
+      render: (text) => (
         <span
           style={{
             color: textSub,
@@ -439,16 +493,22 @@ export default function AdminNews() {
             whiteSpace: "nowrap",
           }}
         >
-          {formatDate(t)}
+          {formatNewsDate(text, i18n.language)}
         </span>
       ),
     },
     {
-      title: "ACTION",
+      title: t("admin.news.colAction"),
       key: "action",
       align: "right",
+      fixed: "right", // reste visible pendant le scroll horizontal
+      width: actionWidth,
       render: (_, record) => (
-        <ArticleActionCell record={record} navigate={navigate} />
+        <ArticleActionCell
+          record={record}
+          navigate={navigate}
+          isMobile={isMobile}
+        />
       ),
     },
   ];
@@ -459,29 +519,36 @@ export default function AdminNews() {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 24,
+        gap: isMobile ? 16 : 24,
         paddingBottom: 40,
         fontFamily: "'Poppins', sans-serif",
+        width: "100%",
+        minWidth: 0,
       }}
     >
+      {/* CSS : barre de scroll invisible */}
+      <style>{hideScrollbarCss}</style>
+
       {/*  Header  */}
       <div
         style={{
           display: "flex",
+          flexDirection: isMobile ? "column" : "row",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: isMobile ? "stretch" : "flex-start",
+          gap: 12,
         }}
       >
-        <div>
+        <div style={{ minWidth: 0 }}>
           <h1
             style={{
-              fontSize: 26,
+              fontSize: isMobile ? 22 : 26,
               fontWeight: 800,
               color: textMain,
               margin: "0 0 4px",
             }}
           >
-            News & Articles
+            {t("admin.news.title")}
           </h1>
           <p
             style={{
@@ -490,19 +557,9 @@ export default function AdminNews() {
               margin: 0,
             }}
           >
-            Gérez les actualités affichées sur le site web.
+            {t("admin.news.pageDesc")}
           </p>
         </div>
-        {/* <Button
-          type="primary"
-          size="large"
-          style={{
-            backgroundColor: "var(--ant-color-primary)",
-            borderColor: "#023B6A",
-            borderRadius: 10,
-            fontWeight: 700,
-          }}
-        ></Button> */}
         <button
           onClick={() => navigate("/admin/news/add")}
           style={{
@@ -516,7 +573,10 @@ export default function AdminNews() {
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
+            justifyContent: "center",
             gap: 6,
+            flexShrink: 0,
+            width: isMobile ? "100%" : "auto",
             boxShadow: "0 2px 10px rgba(2,59,106,0.25)",
             transition: "background 0.15s",
           }}
@@ -524,7 +584,7 @@ export default function AdminNews() {
           <span style={{ fontSize: 16, fontWeight: 800, lineHeight: 1 }}>
             +
           </span>
-          Add Article
+          {t("admin.news.addArticle")}
         </button>
       </div>
 
@@ -534,27 +594,33 @@ export default function AdminNews() {
           backgroundColor: bgCard,
           border: `1px solid ${border}`,
           borderRadius: 14,
-          padding: "16px 20px",
+          padding: isMobile ? "12px 14px" : "16px 20px",
           display: "flex",
+          flexDirection: isMobile ? "column" : "row",
           flexWrap: "wrap",
-          alignItems: "center",
+          alignItems: isMobile ? "stretch" : "center",
           gap: 12,
           boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         }}
       >
         {/* Recherche */}
         <Input.Search
-          placeholder="Rechercher par titre, contenu…"
+          placeholder={t("admin.news.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           allowClear
-          style={{ width: 280 }}
+          style={{ width: isMobile ? "100%" : 280 }}
           size="middle"
         />
 
         {/* Filtre visibilité */}
         <Segmented
-          options={["All", "Published", "Draft"]}
+          block={isMobile}
+          options={[
+            { value: "All", label: t("admin.news.filterAll") },
+            { value: "Published", label: t("admin.news.filterPublished") },
+            { value: "Draft", label: t("admin.news.filterDraft") },
+          ]}
           value={visibilityFilter}
           onChange={setVisibilityFilter}
           size="middle"
@@ -562,7 +628,15 @@ export default function AdminNews() {
         />
 
         {/* Boutons droite */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div
+          style={{
+            marginLeft: isMobile ? 0 : "auto",
+            display: "flex",
+            justifyContent: isMobile ? "flex-end" : "flex-start",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
           {hasActiveFilters && (
             <Button
               icon={<FilterOutlined />}
@@ -574,14 +648,14 @@ export default function AdminNews() {
                 borderColor: "#fecaca",
               }}
             >
-              Réinitialiser
+              {t("admin.news.resetFilters")}
             </Button>
           )}
           <Button
             icon={<ReloadOutlined />}
             size="middle"
             onClick={() => refetch()}
-            title="Actualiser"
+            title={t("admin.news.refresh")}
             style={{ borderRadius: 8 }}
           />
           <Button
@@ -592,21 +666,20 @@ export default function AdminNews() {
               color: textSub,
               borderRadius: 8,
             }}
-            title={view === "list" ? "Vue grille" : "Vue liste"}
+            title={view === "list" ? t("admin.news.gridView") : t("admin.news.listView")}
           />
         </div>
       </div>
 
-      {/* ── Résultat filtre ─────────────────────────────────────────────── */}
+      {/* ── Résultat filtre  */}
       {hasActiveFilters && (
         <div style={{ fontSize: 12, color: textSub }}>
           <FilterOutlined style={{ marginRight: 4 }} />
-          {filtered.length} résultat{filtered.length > 1 ? "s" : ""} sur{" "}
-          {articles.length} articles
+          {t("admin.news.resultsCount", { count: filtered.length, total: articles.length })}
         </div>
       )}
 
-      {/* ── Erreur ──────────────────────────────────────────────────────── */}
+      {/* ── Erreur  */}
       {isError && (
         <div
           style={{
@@ -616,27 +689,29 @@ export default function AdminNews() {
           }}
         >
           <p style={{ marginBottom: 12 }}>
-            Erreur lors du chargement des articles.
+            {t("admin.news.loadError")}
           </p>
           <Button onClick={() => refetch()} icon={<ReloadOutlined />}>
-            Réessayer
+            {t("admin.news.retry")}
           </Button>
         </div>
       )}
 
-      {/* ── Contenu ──────────────────────────────────────────────────────── */}
+      {/* ── Contenu  */}
       {!isError && (
         <div
+          className="news-table-wrap"
           style={{
             backgroundColor: bgCard,
             border: `1px solid ${border}`,
             borderRadius: 16,
-            overflow: "hidden",
+            // PAS de overflow:hidden en vue liste : il bloque le scroll horizontal
+            overflow: view === "list" ? "visible" : "hidden",
             boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
           }}
         >
           {isLoading ? (
-            <div style={{ padding: 32 }}>
+            <div style={{ padding: isMobile ? 16 : 32 }}>
               <Skeleton active paragraph={{ rows: 6 }} />
             </div>
           ) : view === "list" ? (
@@ -644,29 +719,34 @@ export default function AdminNews() {
               columns={columns}
               dataSource={filtered}
               rowKey="id"
+              scroll={{ x: tableMinWidth }}
               locale={{
-                emptyText: <Empty description="Aucun article trouvé" />,
+                emptyText: <Empty description={t("admin.news.noArticles")} />,
               }}
               pagination={{
                 placement: ["bottomRight"],
                 pageSize: 10,
+                size: isMobile ? "small" : "default",
+                simple: isMobile,
                 showSizeChanger: false,
-                showTotal: (t) => `${t} article${t > 1 ? "s" : ""}`,
+                showTotal: (total) => t("admin.news.totalCount", { count: total }),
               }}
             />
           ) : (
-            /* ── Vue Grille ─────────────────────────────────────────────── */
+            /* ── Vue Grille  */
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: 24,
-                padding: 24,
+                // min(300px, 100%) évite le débordement sur les petits écrans
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
+                gap: isMobile ? 16 : 24,
+                padding: isMobile ? 12 : 24,
               }}
             >
               {filtered.length === 0 && (
                 <Empty
-                  description="Aucun article trouvé"
+                  description={t("admin.news.noArticles")}
                   style={{ gridColumn: "1/-1" }}
                 />
               )}
@@ -677,10 +757,10 @@ export default function AdminNews() {
                   cover={
                     <div style={{ position: "relative" }}>
                       <img
-                        alt="cover"
+                        alt={item.title}
                         src={getImageUrl(item.imageUrl)}
                         style={{
-                          height: 160,
+                          height: isMobile ? 140 : 160,
                           objectFit: "cover",
                           width: "100%",
                           borderTopLeftRadius: 12,
@@ -701,19 +781,24 @@ export default function AdminNews() {
                       </div>
                     </div>
                   }
-                  bodyStyle={{ padding: "16px 20px" }}
+                  styles={{
+                    body: { padding: isMobile ? "12px 14px" : "16px 20px" },
+                  }}
                   style={{
                     borderRadius: 12,
                     border: `1px solid ${border}`,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                    minWidth: 0,
                   }}
                   actions={[
                     <EyeOutlined
                       key="view"
+                      title={t("admin.news.view")}
                       onClick={() => navigate(`/admin/news/preview/${item.id}`)}
                     />,
                     <EditOutlined
                       key="edit"
+                      title={t("admin.news.edit")}
                       onClick={() => navigate(`/admin/news/edit/${item.id}`)}
                     />,
                     <VisibilityToggle
@@ -729,7 +814,7 @@ export default function AdminNews() {
                         style={{
                           color: textMain,
                           fontWeight: 700,
-                          fontSize: 15,
+                          fontSize: isMobile ? 14 : 15,
                         }}
                       >
                         {item.title}
@@ -755,7 +840,7 @@ export default function AdminNews() {
                             color: textSub,
                           }}
                         >
-                          {formatDate(item.createdAt)}
+                          {formatNewsDate(item.createdAt, i18n.language)}
                         </div>
                       </div>
                     }

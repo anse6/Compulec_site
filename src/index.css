@@ -67,3 +67,20 @@
 .animate-pulse-glow {
   animation: pulse-glow 10s ease-in-out infinite;
 }
+
+/* ── Admin projects table — scroll horizontal invisible ── */
+/* overflow:hidden retiré du parent JS, Ant Design gère le scroll en interne */
+.admin-projects-table-card .ant-table-wrapper {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.admin-projects-table-card .ant-table-body,
+.admin-projects-table-card .ant-table-content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+.admin-projects-table-card .ant-table-body::-webkit-scrollbar,
+.admin-projects-table-card .ant-table-content::-webkit-scrollbar {
+  display: none;
+}
